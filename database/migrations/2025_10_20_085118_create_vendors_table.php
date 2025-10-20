@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('vendors', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
-            // $table->unsignedBigInteger('business_id')->nullable();
-            $table->foreignId('business_id')->nullable()->constrained('businesses')->onDelete('cascade')->onUpdate('cascade');
-            $table->string('address');
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
+            $table->string('phone', 20)->index();
+            $table->string('zip_code', 50);
+            $table->string('address', 255)->nullable();
+            $table->string('remarks', 255)->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('vendors');
     }
 };
