@@ -3,17 +3,28 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\RoleAndPermission\PermissionController;
 use App\Http\Controllers\RoleAndPermission\RoleController;
 use App\Http\Controllers\RoleAndPermission\RoleHasPermission;
 
+// ////////////////// Auth Related Route /////////////////
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:api')->group(function () {
-    Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
+
+    // ////////////////// Profile Related Route /////////////////
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/profile', 'view');
+        Route::post('/profile-edit', 'edit');
+        Route::post('/change-password', 'changePassword');
+    });
 });
+Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
+Route::post('/otp-varification', [AuthController::class, 'otpVerify']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 

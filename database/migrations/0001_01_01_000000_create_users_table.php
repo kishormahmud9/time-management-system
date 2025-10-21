@@ -22,17 +22,19 @@ return new class extends Migration
             $table->string('phone', 20)->nullable()->index();
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->unsignedBigInteger('business_id')->nullable();
-            // $table->unsignedBigInteger('branch_id')->nullable();
-            // $table->foreignId('business_id')->nullable()->constrained('businesses')->onDelete('set null')->onUpdate('cascade');
-            // $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('set null')->onUpdate('cascade');
+            $table->string('image', 100)->nullable();
+            $table->string('signature', 100)->nullable();
+            $table->enum('marital_status', ['single', 'married'])->nullable();
             $table->enum('status', ['active', 'inactive', 'pending'])->default('pending');
             $table->rememberToken();
             $table->timestamps();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
+        Schema::create('password_resets', function (Blueprint $table) {
             $table->string('email')->primary();
-            $table->string('token');
+            $table->string('otp');
+            $table->boolean('is_verified')->default(false);
+            $table->timestamp('expires_at')->nullable();
             $table->timestamp('created_at')->nullable();
         });
 
