@@ -9,14 +9,11 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Exception;
 
-class RoleHasPermission extends Controller
+class RoleHasPermissionController extends Controller
 {
-    /**
-     * Assign or sync permissions to a role
-     */
     public function store(Request $request)
     {
-      
+
         try {
             // ✅ Validate input
             $validator = Validator::make($request->all(), [
