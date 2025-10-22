@@ -28,7 +28,7 @@ class RoleController extends Controller
 
             $role = Role::create([
                 'name' => $request->name,
-                'guard_name' => $request->guard_name ?? 'web',
+                'guard_name' => $request->guard_name ?? 'api',
             ]);
 
             return response()->json([
@@ -65,7 +65,7 @@ class RoleController extends Controller
     }
 
     // Get single role
-    public function edit($id)
+    public function viewDetails($id)
     {
         try {
             $role = Role::findOrFail($id);

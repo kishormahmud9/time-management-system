@@ -10,7 +10,7 @@ use App\Http\Controllers\RoleAndPermission\RoleHasPermissionController;
 use App\Http\Controllers\RoleAndPermission\UserHasRoleController;
 
 //////////////////// Auth Related Route /////////////////
-Route::controller(ProfileController::class)->group(function () {
+Route::controller(AuthController::class)->group(function () {
     Route::post('/register', 'register');
     Route::post('/login', 'login');
     Route::post('/forget-password', 'forgetPassword');
@@ -20,8 +20,10 @@ Route::controller(ProfileController::class)->group(function () {
 
 /////////////////// Private Route for All Role /////////////////
 Route::middleware('auth:api')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::controller(AuthController::class)->group(function () {
+        Route::post('/logout', 'logout');
+        Route::post('/refresh', 'refresh');
+    });
 
     //**** Profile Related Route ****//
     Route::controller(ProfileController::class)->group(function () {

@@ -28,7 +28,7 @@ class PermissionController extends Controller
 
             $permission = Permission::create([
                 'name' => $request->name,
-                'guard_name' => $request->guard_name ?? 'web',
+                'guard_name' => $request->guard_name ?? 'api',
             ]);
 
             return response()->json([
@@ -65,7 +65,7 @@ class PermissionController extends Controller
     }
 
     // Get single permission
-    public function edit($id)
+    public function viewDetails($id)
     {
         try {
             $permission = Permission::findOrFail($id);
