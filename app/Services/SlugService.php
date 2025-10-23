@@ -22,7 +22,7 @@ class SlugService
         $originalSlug = $slug;
         $counter = 1;
 
-        while ($model::withTrashed()->where($field, $slug)
+        while ($model::where($field, $slug)
             ->when($exceptId, function ($query) use ($exceptId) {
                 return $query->where('id', '!=', $exceptId);
             })

@@ -68,47 +68,139 @@ class AuthController extends Controller
     }
 
     // ✅ Register Busiiness Owner
+    // public function registerBusinessOwner(Request $request)
+    // {
+    //     try {
+    //         // ✅ Validation
+    //         $validator = Validator::make($request->all(), [
+    //             'name' => 'required|string|max:100',
+    //             'email' => 'required|string|email|max:100|unique:users',
+    //             'password' => 'required|string|min:6',
+    //             'phone' => 'nullable|string|max:20',
+    //             'company_name' => 'required|string|max:100',
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'errors' => $validator->errors(),
+    //             ], 422);
+    //         }
+
+    //         // ✅ Create user
+    //         $user = User::create([
+    //             'name' => $request->name,
+    //             'email' => $request->email,
+    //             'username' => generateUniqueUsername($request->name),
+    //             'password' => Hash::make($request->password),
+    //             'phone' => $request->phone,
+    //             'status' => 'pending', // Default waiting for admin approval
+    //         ]);
+
+    //         // ✅ Generate JWT token
+    //         $token = JWTAuth::fromUser($user);
+
+    //         // ✅ Create business
+    //         $business = Business::create([
+    //             'name' => $request->company_name,
+    //             'slug' => SlugService::generateUniqueSlug($request->company_name, Business::class),
+    //             'email' => $request->email,
+    //             'phone' => $request->phone,
+    //             'owner_id' => $user->id, // optional (if your Business model has owner_id)
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Registration submitted successfully. Waiting for admin approval.',
+    //             'token' => $token,
+    //             'user' => $user,
+    //             'business' => $business,
+    //         ], 201);
+    //     } catch (\Illuminate\Database\QueryException $e) {
+    //         // Database related error
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Database error occurred.',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     } catch (\Exception $e) {
+    //         // Generic error
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Something went wrong during registration.',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
     public function registerBusinessOwner(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:100|unique:users',
-            'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'logo' => 'nullable|string',
-            'bussinees_name' => 'required|string|max:100',
-        ]);
+        try {
+            // ✅ Validation
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:100',
+                'email' => 'required|string|email|max:100|unique:users',
+                'password' => 'required|string|min:6',
+                'phone' => 'nullable|string|max:20',
+                'company_name' => 'required|string|max:100',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            // ✅ DB Transaction (Best Practice)
+            DB::beginTransaction();
+
+            // ✅ Create user
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'username' => generateUniqueUsername($request->name),
+                'password' => Hash::make($request->password),
+                'phone' => $request->phone,
+                'status' => 'pending', // Waiting for admin approval
+            ]);
+
+            // ✅ Create business
+            $business = Business::create([
+                'name' => $request->company_name,
+                'slug' => SlugService::generateUniqueSlug($request->company_name, Business::class),
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'owner_id' => $user->id, // optional
+            ]);
+
+            // ✅ Update user's business_id after business creation
+            $user->update([
+                'business_id' => $business->id,
+            ]);
+
+            // ✅ Generate JWT token
+            $token = JWTAuth::fromUser($user);
+
+            // ✅ Commit transaction
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration submitted successfully. Waiting for admin approval.',
+                'token' => $token,
+                'user' => $user,
+                'business' => $business,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback if anything fails
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong during registration.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'username' => generateUniqueUsername($request->name),
-            'password' => $request->password,
-            'phone' => $request->phone,
-            'status' => 'pending',
-        ]);
-
-        $bussiness = Business::create([
-            'name' => $request->bussinees_name,
-            'slug' => SlugService::generateUniqueSlug($request->bussinees_name, Business::class),
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'address' => $request->address,
-            'logo' => $request->logo,
-        ]);
-
-        return response()->json([
-            'message' => 'Registration submitted successfully. Waiting for admin approval.',
-            'user' => $user,
-            'bussiness' => $bussiness,
-        ], 201);
     }
+
 
 
     // ✅ Login
@@ -136,7 +228,7 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            if ($user->status !== 'active') {
+            if ($user->status !== 'approved') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Your account is not approved yet.',
@@ -334,6 +426,8 @@ class AuthController extends Controller
     // ✅ Reset Password
     public function resetPassword(Request $request)
     {
+
+        dd($request->all());
         try {
             // ✅ Validate request inputs
             $request->validate([

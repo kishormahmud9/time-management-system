@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('image', 100)->nullable();
             $table->string('signature', 100)->nullable();
             $table->enum('marital_status', ['single', 'married'])->nullable();
-            $table->enum('status', ['active', 'inactive', 'pending'])->default('pending');
+            $table->enum('status', ['approved', 'rejected', 'pending'])->default('pending');
             $table->rememberToken();
             $table->timestamps();
         });

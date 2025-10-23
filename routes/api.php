@@ -13,7 +13,8 @@ use App\Http\Controllers\User\UserManageController;
 
 //////////////////// Auth Related Route /////////////////
 Route::controller(AuthController::class)->group(function () {
-    Route::post('/register', 'register');
+    Route::post('/register', 'registerBusinessOwner');
+    // Route::post('/register', 'registerBusinessOwner');
     Route::post('/login', 'login');
     Route::post('/forget-password', 'forgetPassword');
     Route::post('/otp-varification', 'otpVerify');
@@ -89,7 +90,8 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::post('/user', 'store');
         Route::get('/users', 'view');
         Route::get('/user/{id}', 'viewDetails');
-        Route::post('/user/{id}', 'update');
+        Route::put('/user/{id}', 'update');
         Route::delete('/user/{id}', 'delete');
+        Route::patch('/user/{id}', 'statusUpdate');
     });
 });
