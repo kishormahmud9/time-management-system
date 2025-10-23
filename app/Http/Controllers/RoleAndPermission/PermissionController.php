@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\RoleAndPermission;
 
 use App\Http\Controllers\Controller;
+use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
@@ -10,6 +11,7 @@ use Exception;
 
 class PermissionController extends Controller
 {
+    use UserActivityTrait;
     // Create new permission
     public function store(Request $request)
     {
@@ -31,6 +33,7 @@ class PermissionController extends Controller
                 'guard_name' => $request->guard_name ?? 'api',
             ]);
 
+            $this->logActivity('create_permission');
             return response()->json([
                 'success' => true,
                 'message' => 'Permission created successfully',
@@ -105,7 +108,7 @@ class PermissionController extends Controller
                 'name' => $request->name,
                 'guard_name' => $request->guard_name ?? $permission->guard_name,
             ]);
-
+            $this->logActivity('update_permission');
             return response()->json([
                 'success' => true,
                 'message' => 'Permission updated successfully',
@@ -127,6 +130,7 @@ class PermissionController extends Controller
             $permission = Permission::findOrFail($id);
             $permission->delete();
 
+            $this->logActivity('delete_permission');
             return response()->json([
                 'success' => true,
                 'message' => 'Permission deleted successfully'

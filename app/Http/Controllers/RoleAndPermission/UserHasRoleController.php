@@ -4,12 +4,14 @@ namespace App\Http\Controllers\RoleAndPermission;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
 
 class UserHasRoleController extends Controller
 {
+    use UserActivityTrait;
     public function store(Request $request)
     {
         try {
@@ -40,6 +42,7 @@ class UserHasRoleController extends Controller
 
             $user->assignRole($role->name);
 
+            $this->logActivity('assign_role_to_user');
             // ✅ Step 4: Success response
             return response()->json([
                 'success' => true,

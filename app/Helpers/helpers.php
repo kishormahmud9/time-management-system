@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserLog;
 use Illuminate\Support\Str;
 
 if (!function_exists('generateUniqueUsername')) {
@@ -27,4 +28,14 @@ if (!function_exists('generateUniqueUsername')) {
 
         return $username;
     }
+}
+
+function authenticated($request, $user)
+{
+    UserLog::create([
+        'user_id' => $user->id,
+        'action' => 'login',
+        'ip_address' => $request->ip() ?? null,
+        'user_agent' => $request->userAgent() ?? null,
+    ]);
 }

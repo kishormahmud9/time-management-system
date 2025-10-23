@@ -6,6 +6,7 @@ use App\Models\Business;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Services\SlugService;
+use App\Traits\UserActivityTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
+    use UserActivityTrait;
     // ✅ Register
     public function register(Request $request)
     {
@@ -151,6 +153,7 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            $this->logActivity('login');
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
@@ -177,7 +180,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
-
+        $this->logActivity('logout');
         return response()->json([
             'message' => 'Successfully logged out'
         ]);
@@ -364,6 +367,7 @@ class AuthController extends Controller
             // ✅ Delete password reset record
             DB::table('password_resets')->where('email', $request->email)->delete();
 
+            $this->logActivity('reset_password');
             return response()->json([
                 'success' => true,
                 'message' => 'Password reset successful',
@@ -389,5 +393,5 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-    } 
+    }
 }

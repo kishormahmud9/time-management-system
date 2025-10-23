@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Traits\UserActivityTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class ProfileController extends Controller
 {
+    use UserActivityTrait;
     // ✅ user view profile
     public function view()
     {
@@ -94,6 +96,7 @@ class ProfileController extends Controller
             $user->update($validated);
             // dd($user);
 
+            $this->logActivity('update_profile');
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully',
@@ -150,6 +153,7 @@ class ProfileController extends Controller
             $user->password = Hash::make($request->new_password);
             $user->save();
 
+            $this->logActivity('change_password');
             return response()->json([
                 'success' => true,
                 'message' => 'Password changed successfully',

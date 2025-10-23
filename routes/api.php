@@ -8,6 +8,8 @@ use App\Http\Controllers\RoleAndPermission\PermissionController;
 use App\Http\Controllers\RoleAndPermission\RoleController;
 use App\Http\Controllers\RoleAndPermission\RoleHasPermissionController;
 use App\Http\Controllers\RoleAndPermission\UserHasRoleController;
+use App\Http\Controllers\User\UserActivityLogController;
+use App\Http\Controllers\User\UserManageController;
 
 //////////////////// Auth Related Route /////////////////
 Route::controller(AuthController::class)->group(function () {
@@ -75,5 +77,19 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
     //**** UserHasRole Related Routes ****//
     Route::controller(UserHasRoleController::class)->group(function () {
         Route::post('/user-has-role', 'store');
+    });
+
+    //**** Activity Related Routes ****//
+    Route::controller(UserActivityLogController::class)->group(function () {
+        Route::get('/manage-activity', 'view');
+    });
+
+    //**** User Manage Related Route ****//
+    Route::controller(UserManageController::class)->group(function () {
+        Route::post('/user', 'store');
+        Route::get('/users', 'view');
+        Route::get('/user/{id}', 'viewDetails');
+        Route::post('/user/{id}', 'update');
+        Route::delete('/user/{id}', 'delete');
     });
 });

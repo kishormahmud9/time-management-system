@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\RoleAndPermission;
 
 use App\Http\Controllers\Controller;
+use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
@@ -10,6 +11,7 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
+    use UserActivityTrait;
     // Create new role
     public function store(Request $request)
     {
@@ -31,6 +33,7 @@ class RoleController extends Controller
                 'guard_name' => $request->guard_name ?? 'api',
             ]);
 
+            $this->logActivity('create_role');
             return response()->json([
                 'success' => true,
                 'message' => 'Role created successfully',
@@ -106,7 +109,7 @@ class RoleController extends Controller
                 'name' => $request->name,
                 'guard_name' => $request->guard_name ?? $role->guard_name,
             ]);
-
+            $this->logActivity('update_role');
             return response()->json([
                 'success' => true,
                 'message' => 'Role updated successfully',
@@ -127,7 +130,7 @@ class RoleController extends Controller
         try {
             $role = Role::findOrFail($id);
             $role->delete();
-
+            $this->logActivity('delete_role');
             return response()->json([
                 'success' => true,
                 'message' => 'Role deleted successfully'

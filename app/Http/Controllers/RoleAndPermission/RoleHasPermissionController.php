@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\RoleAndPermission;
 
 use App\Http\Controllers\Controller;
+use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
@@ -11,6 +12,7 @@ use Exception;
 
 class RoleHasPermissionController extends Controller
 {
+    use UserActivityTrait;
     public function store(Request $request)
     {
 
@@ -40,6 +42,7 @@ class RoleHasPermissionController extends Controller
             // ✅ Sync permissions with role
             $role->syncPermissions($permissionNames);
 
+            $this->logActivity('assign_permission_to_role');
             return response()->json([
                 'success' => true,
                 'message' => 'Permissions assigned successfully to role',
