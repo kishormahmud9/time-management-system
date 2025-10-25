@@ -3,6 +3,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Party\ClientController;
+use App\Http\Controllers\Party\EmployeeController;
+use App\Http\Controllers\Party\PartyController;
+use App\Http\Controllers\Party\VendorController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\RoleAndPermission\PermissionController;
 use App\Http\Controllers\RoleAndPermission\RoleController;
@@ -93,5 +97,17 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::put('/user/{id}', 'update');
         Route::delete('/user/{id}', 'delete');
         Route::patch('/user/{id}', 'statusUpdate');
+    });
+
+    //**** Vendor Related Route ****//
+    Route::controller(PartyController::class)->group(function () {
+        Route::post('/party', 'store');
+        Route::get('/parties', 'view');
+        Route::get('/clients', 'getClient');
+        Route::get('/vendors', 'getVendor');
+        Route::get('/employees', 'getEmployee');
+        Route::get('/party/{id}', 'viewDetails');
+        Route::put('/party/{id}', 'update');
+        Route::delete('/party/{id}', 'delete');
     });
 });
