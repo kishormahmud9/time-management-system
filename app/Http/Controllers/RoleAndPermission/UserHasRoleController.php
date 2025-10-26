@@ -42,7 +42,7 @@ class UserHasRoleController extends Controller
 
             $user->assignRole($role->name);
 
-            $this->logActivity('assign_role_to_user');
+            $this->logActivity("assign_role_to_user");
             // ✅ Step 4: Success response
             return response()->json([
                 'success' => true,

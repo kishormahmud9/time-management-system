@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\BusinessRegistrationService;
 use App\Services\SlugService;
 use App\Traits\UserActivityTrait;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,13 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 class AuthController extends Controller
 {
     use UserActivityTrait;
+
+    protected $businessService;
+
+    public function __construct(BusinessRegistrationService $businessService)
+    {
+        $this->businessService = $businessService;
+    }
     // ✅ Register
     public function register(Request $request)
     {
@@ -67,71 +75,6 @@ class AuthController extends Controller
         }
     }
 
-    // ✅ Register Busiiness Owner
-    // public function registerBusinessOwner(Request $request)
-    // {
-    //     try {
-    //         // ✅ Validation
-    //         $validator = Validator::make($request->all(), [
-    //             'name' => 'required|string|max:100',
-    //             'email' => 'required|string|email|max:100|unique:users',
-    //             'password' => 'required|string|min:6',
-    //             'phone' => 'nullable|string|max:20',
-    //             'company_name' => 'required|string|max:100',
-    //         ]);
-
-    //         if ($validator->fails()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'errors' => $validator->errors(),
-    //             ], 422);
-    //         }
-
-    //         // ✅ Create user
-    //         $user = User::create([
-    //             'name' => $request->name,
-    //             'email' => $request->email,
-    //             'username' => generateUniqueUsername($request->name),
-    //             'password' => Hash::make($request->password),
-    //             'phone' => $request->phone,
-    //             'status' => 'pending', // Default waiting for admin approval
-    //         ]);
-
-    //         // ✅ Generate JWT token
-    //         $token = JWTAuth::fromUser($user);
-
-    //         // ✅ Create business
-    //         $business = Business::create([
-    //             'name' => $request->company_name,
-    //             'slug' => SlugService::generateUniqueSlug($request->company_name, Business::class),
-    //             'email' => $request->email,
-    //             'phone' => $request->phone,
-    //             'owner_id' => $user->id, // optional (if your Business model has owner_id)
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Registration submitted successfully. Waiting for admin approval.',
-    //             'token' => $token,
-    //             'user' => $user,
-    //             'business' => $business,
-    //         ], 201);
-    //     } catch (\Illuminate\Database\QueryException $e) {
-    //         // Database related error
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Database error occurred.',
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     } catch (\Exception $e) {
-    //         // Generic error
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Something went wrong during registration.',
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
     public function registerBusinessOwner(Request $request)
     {
         try {
@@ -151,45 +94,12 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            // ✅ DB Transaction (Best Practice)
-            DB::beginTransaction();
+            $data = $this->businessService->registerOwner($request->all());
 
-            // ✅ Create user
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'username' => generateUniqueUsername($request->name),
-                'password' => Hash::make($request->password),
-                'phone' => $request->phone,
-                'status' => 'pending', // Waiting for admin approval
-            ]);
-
-            // ✅ Create business
-            $business = Business::create([
-                'name' => $request->company_name,
-                'slug' => SlugService::generateUniqueSlug($request->company_name, Business::class),
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'owner_id' => $user->id, // optional
-            ]);
-
-            // ✅ Update user's business_id after business creation
-            $user->update([
-                'business_id' => $business->id,
-            ]);
-
-            // ✅ Generate JWT token
-            $token = JWTAuth::fromUser($user);
-
-            // ✅ Commit transaction
-            DB::commit();
-            
             return response()->json([
                 'success' => true,
-                'message' => 'Registration submitted successfully. Waiting for admin approval.',
-                'token' => $token,
-                'user' => $user,
-                'business' => $business,
+                'message' => 'Registration submitted successfully.',
+                'data' => $data
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback if anything fails
@@ -284,7 +194,7 @@ class AuthController extends Controller
         try {
             $newToken = Auth::refresh();
             return response()->json([
-                'message' => 'Token refreshed successfully',
+                'message' => 'Token Refreshed Successfully',
                 'token' => $newToken,
                 'user' => Auth::user()
             ]);

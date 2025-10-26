@@ -3,6 +3,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Company\BusinessController;
+use App\Http\Controllers\Mail\EmailTemplateController;
 use App\Http\Controllers\Party\ClientController;
 use App\Http\Controllers\Party\EmployeeController;
 use App\Http\Controllers\Party\PartyController;
@@ -18,7 +20,7 @@ use App\Http\Controllers\User\UserManageController;
 //////////////////// Auth Related Route /////////////////
 Route::controller(AuthController::class)->group(function () {
     Route::post('/register', 'registerBusinessOwner');
-    // Route::post('/register', 'registerBusinessOwner');
+    // Route::post('/register', 'register');
     Route::post('/login', 'login');
     Route::post('/forget-password', 'forgetPassword');
     Route::post('/otp-varification', 'otpVerify');
@@ -99,7 +101,7 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::patch('/user/{id}', 'statusUpdate');
     });
 
-    //**** Vendor Related Route ****//
+    //**** Party Related Route ****//
     Route::controller(PartyController::class)->group(function () {
         Route::post('/party', 'store');
         Route::get('/parties', 'view');
@@ -109,5 +111,25 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::get('/party/{id}', 'viewDetails');
         Route::put('/party/{id}', 'update');
         Route::delete('/party/{id}', 'delete');
+    });
+
+    //**** Email Template Related Route ****//
+    Route::controller(EmailTemplateController::class)->group(function () {
+        Route::post('/email-template', 'store');
+        Route::get('/email-template', 'view');
+        Route::get('/email-template/{id}', 'viewDetails');
+        Route::put('/email-template/{id}', 'update');
+        Route::delete('/email-template/{id}', 'delete');
+    });
+
+
+    //**** Business Related Route ****//
+    Route::controller(BusinessController::class)->group(function () {
+        Route::post('/business', 'store');
+        Route::get('/business', 'view');
+        Route::get('/business/{id}', 'viewDetails');
+        Route::post('/business/{id}', 'update');
+        Route::delete('/business/{id}', 'delete');
+        Route::patch('/business/{id}', 'statusUpdate');
     });
 });
