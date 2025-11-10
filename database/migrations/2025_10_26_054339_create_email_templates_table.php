@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('subject');
             $table->longText('body');
             $table->enum('status', ['active', 'inactive', 'pending'])->default('active');
+            $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
         });
     }

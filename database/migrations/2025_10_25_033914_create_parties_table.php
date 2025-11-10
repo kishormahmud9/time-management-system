@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('address', 255)->nullable();
             $table->string('remarks', 255)->nullable();
             $table->enum('party_type', ['client', 'vendor', 'employee']);
+            $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
         });
     }
