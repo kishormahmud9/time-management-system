@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'username' => "superadmin",
             'email' => 'superadmin@example.com',
             'password' => 'superadmin@example.com',
-            'status' => 'active',
+            'status' => 'approved',
         ]);
     }
 }
