@@ -232,6 +232,14 @@ class BusinessController extends Controller
             }
 
             $business->update($request->only(['status']));
+            $owner = User::findOrFail($business->owner_id);
+
+            // Update owner status based on business status
+            if ($request->status === 'active') {
+                $owner->update(['status' => 'approved']);
+            } elseif ($request->status === 'inactive') {
+                $owner->update(['status' => 'rejected']);
+            }
 
             $this->logActivity("{$request->status}_business_owner");
             return response()->json([

@@ -53,7 +53,18 @@ Route::middleware(['auth:api', 'role:Staff'])->group(function () {});
 Route::middleware(['auth:api', 'role:Business Admin'])->group(function () {});
 
 //////////////////// Private Route For System Admin Role  /////////////////
-Route::middleware(['auth:api', 'role:System Admin'])->group(function () {});
+Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
+
+    //**** Business Related Route ****//
+    Route::controller(BusinessController::class)->group(function () {
+        Route::post('/business', 'store');
+        Route::get('/business', 'view');
+        Route::get('/business/{id}', 'viewDetails');
+        Route::post('/business/{id}', 'update');
+        Route::delete('/business/{id}', 'delete');
+        Route::patch('/business/{id}', 'statusUpdate');
+    });
+});
 
 //////////////////// Role & Permission Route Only for Sytem Admin and Busines Admin /////////////////
 Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(function () {
@@ -120,16 +131,5 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::get('/email-template/{id}', 'viewDetails');
         Route::put('/email-template/{id}', 'update');
         Route::delete('/email-template/{id}', 'delete');
-    });
-
-
-    //**** Business Related Route ****//
-    Route::controller(BusinessController::class)->group(function () {
-        Route::post('/business', 'store');
-        Route::get('/business', 'view');
-        Route::get('/business/{id}', 'viewDetails');
-        Route::post('/business/{id}', 'update');
-        Route::delete('/business/{id}', 'delete');
-        Route::patch('/business/{id}', 'statusUpdate');
     });
 });
