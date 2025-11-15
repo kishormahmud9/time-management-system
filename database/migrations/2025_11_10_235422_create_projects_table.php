@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->text('name');
             $table->string('code')->nullable();
-            $table->foreignId('client_id')->constrained('parties')->onDelete('set null');
+            $table->foreignId('client_id')
+                ->nullable()
+                ->constrained('parties')
+                ->onDelete('set null');
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
         });

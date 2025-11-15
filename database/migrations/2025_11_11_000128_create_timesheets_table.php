@@ -52,7 +52,6 @@ return new class extends Migration
             $table->index(['user_id', 'start_date', 'end_date']);
             $table->index('status');
             $table->index('client_id');
-            $table->timestamps();
         });
     }
 
