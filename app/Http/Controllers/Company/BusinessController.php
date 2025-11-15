@@ -211,16 +211,9 @@ class BusinessController extends Controller
     // Business Status Update Business
     public function statusUpdate(Request $request, $id)
     {
-        // dd($id);
         try {
             $business = Business::findOrFail($id);
 
-            if (!$business) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Business not found'
-                ], 404);
-            }
             $validator = Validator::make($request->all(), [
                 'status' => 'required|in:active,inactive,pending',
             ]);
@@ -232,23 +225,65 @@ class BusinessController extends Controller
                 ], 422);
             }
 
-            $business->update($request->only(['status']));
+            // Begin transaction for atomicity
+            DB::beginTransaction();
+
+            $oldStatus = $business->status;
+            $newStatus = $request->status;
+
+            // Update business status
+            $business->update(['status' => $newStatus]);
+
+            // Find owner
             $owner = User::findOrFail($business->owner_id);
 
-            // Update owner status based on business status
-            if ($request->status === 'active') {
-                $owner->update(['status' => 'approved']);
-            } elseif ($request->status === 'inactive') {
-                $owner->update(['status' => 'rejected']);
+            // Only act on role when status actually changes (optional but recommended)
+            if ($oldStatus !== $newStatus) {
+
+                if ($newStatus === 'active') {
+                    // mark owner approved
+                    $owner->update(['status' => 'approved']);
+
+                    // assign Business Admin role if not already assigned
+                    if (! $owner->hasRole('Business Admin')) {
+                        $owner->assignRole('Business Admin');
+                    }
+
+                    // optionally remove any 'rejected' or 'pending' related roles:
+                    // $owner->removeRole('SomeOtherRole');
+
+                } elseif ($newStatus === 'inactive') {
+                    // mark owner rejected
+                    $owner->update(['status' => 'rejected']);
+
+                    // remove Business Admin role if exists
+                    if ($owner->hasRole('Business Admin')) {
+                        $owner->removeRole('Business Admin');
+                    }
+
+                    // optionally assign a default 'User' role:
+                    // if (! $owner->hasRole('User')) {
+                    //     $owner->assignRole('User');
+                    // }
+
+                } elseif ($newStatus === 'pending') {
+                    // don't change roles; maybe set owner status accordingly
+                    $owner->update(['status' => 'pending']);
+                }
             }
 
-            $this->logActivity("{$request->status}_business_owner");
+            // log activity (you already had this)
+            $this->logActivity("{$newStatus}_business_owner");
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Status Updated successfully',
                 'data' => $business
-            ]);
+            ], 200);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update status',
@@ -256,4 +291,52 @@ class BusinessController extends Controller
             ], 500);
         }
     }
+    
+    // public function statusUpdate(Request $request, $id)
+    // {
+    //     // dd($id);
+    //     try {
+    //         $business = Business::findOrFail($id);
+
+    //         if (!$business) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Business not found'
+    //             ], 404);
+    //         }
+    //         $validator = Validator::make($request->all(), [
+    //             'status' => 'required|in:active,inactive,pending',
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'errors' => $validator->errors()
+    //             ], 422);
+    //         }
+
+    //         $business->update($request->only(['status']));
+    //         $owner = User::findOrFail($business->owner_id);
+
+    //         // Update owner status based on business status
+    //         if ($request->status === 'active') {
+    //             $owner->update(['status' => 'approved']);
+    //         } elseif ($request->status === 'inactive') {
+    //             $owner->update(['status' => 'rejected']);
+    //         }
+
+    //         $this->logActivity("{$request->status}_business_owner");
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Status Updated successfully',
+    //             'data' => $business
+    //         ]);
+    //     } catch (Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to update status',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
 }

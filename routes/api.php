@@ -61,6 +61,16 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
         Route::delete('/business/{id}', 'delete');
         Route::patch('/business/{id}', 'statusUpdate');
     });
+
+
+    //**** Permission Related Route ****//
+    Route::controller(PermissionController::class)->group(function () {
+        Route::post('/permission', 'store');
+        Route::get('/permissions', 'view');
+        Route::get('/permission/{id}', 'viewDetails');
+        Route::post('/permission/{id}', 'update');
+        Route::delete('/permission/{id}', 'delete');
+    });
 });
 
 //////////////////// Role & Permission Route Only for Sytem Admin and Busines Admin /////////////////
@@ -73,15 +83,6 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::get('/role/{id}', 'viewDetails');
         Route::post('/role/{id}', 'update');
         Route::delete('/role/{id}', 'delete');
-    });
-
-    //**** Permission Related Route ****//
-    Route::controller(PermissionController::class)->group(function () {
-        Route::post('/permission', 'store');
-        Route::get('/permissions', 'view');
-        Route::get('/permission/{id}', 'viewDetails');
-        Route::post('/permission/{id}', 'update');
-        Route::delete('/permission/{id}', 'delete');
     });
 
     //**** RoleHasPermission Related Routes ****//
