@@ -336,8 +336,7 @@ class AuthController extends Controller
     // ✅ Reset Password
     public function resetPassword(Request $request)
     {
-
-        dd($request->all());
+        // dd($request->all());
         try {
             // ✅ Validate request inputs
             $request->validate([
