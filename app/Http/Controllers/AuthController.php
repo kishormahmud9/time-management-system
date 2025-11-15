@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Business;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Services\BusinessRegistrationService;
-use App\Services\SlugService;
 use App\Traits\UserActivityTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
