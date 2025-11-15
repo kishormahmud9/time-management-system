@@ -211,6 +211,7 @@ class BusinessController extends Controller
     // Business Status Update Business
     public function statusUpdate(Request $request, $id)
     {
+        // dd($id);
         try {
             $business = Business::findOrFail($id);
 
@@ -244,7 +245,7 @@ class BusinessController extends Controller
             $this->logActivity("{$request->status}_business_owner");
             return response()->json([
                 'success' => true,
-                'message' => 'status updated successfully',
+                'message' => 'Status Updated successfully',
                 'data' => $business
             ]);
         } catch (Exception $e) {

@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\Auth;
 
+
 trait UserActivityTrait
 {
     /**
