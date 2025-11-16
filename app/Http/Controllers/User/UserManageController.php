@@ -153,7 +153,7 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $users = $this->access->filterUsersBasedOnAccess($actor);
+            $users = $this->access->filterByBusiness($actor, \App\Models\User::class)->with('roles')->get();
 
             return response()->json([
                 'success' => true,
@@ -179,7 +179,7 @@ class UserManageController extends Controller
             $user = User::findOrFail($id);
 
             // Authorization check using service
-            if (! $this->access->canViewUser($actor, $user)) {
+            if (! $this->access->canViewResource($actor, $user)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to view this user.'
@@ -211,7 +211,7 @@ class UserManageController extends Controller
             $user = User::findOrFail($id);
 
             // Authorization: must be allowed to modify
-            if (! $this->access->canModifyUser($actor, $user)) {
+            if (! $this->access->canModifyResource($actor, $user)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to modify this user.'
@@ -334,7 +334,7 @@ class UserManageController extends Controller
             $user = User::findOrFail($id);
 
             // Authorization: only allowed actors can delete
-            if (! $this->access->canModifyUser($actor, $user)) {
+            if (! $this->access->canModifyResource($actor, $user)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to delete this user.'
@@ -408,7 +408,7 @@ class UserManageController extends Controller
             $user = User::findOrFail($id);
 
             // Authorization: only allowed actors can change status
-            if (! $this->access->canModifyUser($actor, $user)) {
+            if (! $this->access->canModifyResource($actor, $user)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to change this user status.'
