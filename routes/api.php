@@ -1,6 +1,5 @@
 <?php
 
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Company\BusinessController;
@@ -105,7 +104,7 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::post('/user', 'store');
         Route::get('/users', 'view');
         Route::get('/user/{id}', 'viewDetails');
-        Route::put('/user/{id}', 'update');
+        Route::post('/user/{id}', 'update');
         Route::delete('/user/{id}', 'delete');
         Route::patch('/user/{id}', 'statusUpdate');
     });
