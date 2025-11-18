@@ -11,6 +11,11 @@ use Spatie\Permission\Traits\HasRoles;
 
 
 /**
+ * @method bool hasRole(string|array $roles)
+ * @method \Illuminate\Database\Eloquent\Collection|mixed assignRole(...$roles)
+ * @method bool hasAnyRole(...$roles)
+ * @method bool hasAllRoles(...$roles)
+ * 
  * @method static \Illuminate\Database\Eloquent\Builder|User where($column, $operator = null, $value = null, $boolean = 'and')
  * @method static \Illuminate\Database\Eloquent\Builder|User first()
  * @method static \Illuminate\Database\Eloquent\Builder|User create(array $attributes = [])

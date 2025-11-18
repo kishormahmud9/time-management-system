@@ -4,14 +4,23 @@ namespace App\Http\Controllers\Party;
 
 use App\Http\Controllers\Controller;
 use App\Models\Party;
+use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PartyController extends Controller
 {
     use UserActivityTrait;
+    protected UserAccessService $access;
+
+    public function __construct(UserAccessService $access)
+    {
+        $this->access = $access;
+    }
     // Create new Party
     public function store(Request $request)
     {
@@ -32,6 +41,12 @@ class PartyController extends Controller
                 ], 422);
             }
 
+
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $party = Party::create([
                 'name' => $request->name,
                 'phone' => $request->phone,
@@ -39,6 +54,7 @@ class PartyController extends Controller
                 'address' => $request->address,
                 'remarks' => $request->remarks,
                 'party_type' => $request->party_type,
+                'business_id' => $actor->business_id
             ]);
 
             $this->logActivity("create_{$request->party_type}");
@@ -60,12 +76,18 @@ class PartyController extends Controller
     public function view()
     {
         try {
-            $parties = Party::all();
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            // if your service returns Collection, remove ->get()
+            $parties = $this->access->filterByBusiness($actor, Party::class)->get();
 
             return response()->json([
                 'success' => true,
                 'data' => $parties
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -79,12 +101,20 @@ class PartyController extends Controller
     public function getClient()
     {
         try {
-            $parties = Party::where('party_type', 'client')->get();
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $parties = $this->access
+                ->filterByBusiness($actor, Party::class)
+                ->where('party_type', 'client')
+                ->get();
 
             return response()->json([
                 'success' => true,
                 'data' => $parties
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -98,12 +128,20 @@ class PartyController extends Controller
     public function getVendor()
     {
         try {
-            $parties = Party::where('party_type', 'vendor')->get();
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $parties = $this->access
+                ->filterByBusiness($actor, Party::class)
+                ->where('party_type', 'vendor')
+                ->get();
 
             return response()->json([
                 'success' => true,
                 'data' => $parties
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -117,12 +155,20 @@ class PartyController extends Controller
     public function getEmployee()
     {
         try {
-            $parties = Party::where('party_type', 'employee')->get();
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $parties = $this->access
+                ->filterByBusiness($actor, Party::class)
+                ->where('party_type', 'employee')
+                ->get();
 
             return response()->json([
                 'success' => true,
                 'data' => $parties
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -136,12 +182,24 @@ class PartyController extends Controller
     public function viewDetails($id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $party = Party::findOrFail($id);
+
+            if (! $this->access->canViewResource($actor, $party)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to view this party.'
+                ], 403);
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => $party
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -151,12 +209,24 @@ class PartyController extends Controller
         }
     }
 
-
-    // Update role
+    // Update party
     public function update(Request $request, $id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $party = Party::findOrFail($id);
+
+            // Authorization: pass actual Party model (NOT a stdClass)
+            if (! $this->access->canModifyResource($actor, $party)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to modify this party.'
+                ], 403);
+            }
 
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100',
@@ -174,6 +244,7 @@ class PartyController extends Controller
                 ], 422);
             }
 
+            DB::beginTransaction();
 
             $party->update([
                 'name' => $request->name,
@@ -184,13 +255,22 @@ class PartyController extends Controller
                 'party_type' => $request->party_type,
             ]);
 
+            DB::commit();
+
             $this->logActivity("update_{$request->party_type}");
             return response()->json([
                 'success' => true,
                 'message' => 'Party updated successfully',
                 'data' => $party
-            ]);
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Party not found'
+            ], 404);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update Party',
@@ -199,18 +279,43 @@ class PartyController extends Controller
         }
     }
 
-    // Delete role
+    // Delete party
     public function delete($id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $party = Party::findOrFail($id);
+
+            if (! $this->access->canModifyResource($actor, $party)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to delete this party.'
+                ], 403);
+            }
+
+            DB::beginTransaction();
+
             $party->delete();
+
+            DB::commit();
+
             $this->logActivity('delete_party');
             return response()->json([
                 'success' => true,
                 'message' => 'Party deleted successfully'
-            ]);
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Party not found'
+            ], 404);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete Party',

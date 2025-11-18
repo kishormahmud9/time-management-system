@@ -4,9 +4,13 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RoleService;
+use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -15,32 +19,52 @@ use Spatie\Permission\Models\Role;
 class UserManageController extends Controller
 {
     use UserActivityTrait;
+    protected RoleService $roleService;
+    protected UserAccessService $access;
+
+
+    public function __construct(RoleService $roleService, UserAccessService $access)
+    {
+        $this->roleService = $roleService;
+        $this->access = $access;
+    }
+
     // Create new User
     public function store(Request $request)
     {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'email' => 'required|string|email|max:100|unique:users,email',
+            'password' => 'required|string|min:6',
+            'phone' => 'required|string|max:20',
+            'role_id' => 'required|integer|exists:roles,id',
+            'address' => 'nullable|string|max:255',
+            'gender' => 'nullable|in:male,female',
+            'marital_status' => 'nullable|in:single,married',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Ensure actor (the one creating/assigning) exists
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+
+        DB::beginTransaction();
         try {
-            // ✅ Validation
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:100',
-                'email' => 'required|string|email|max:100|unique:users,email',
-                'password' => 'required|string|min:6',
-                'phone' => 'required|string|max:20',
-                'role_id' => 'required|integer|exists:roles,id',
-                'address' => 'nullable|string|max:255',
-                'gender' => 'nullable|in:male,female',
-                'marital_status' => 'nullable|in:single,married',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-                'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // ✅ Image Upload (with random prefix + real upload)
+            // Image upload (same as your code)
             $imagePath = null;
             $signaturePath = null;
 
@@ -58,7 +82,7 @@ class UserManageController extends Controller
                 $signaturePath = 'storage/users/signatures/' . $signatureName;
             }
 
-            // ✅ Create User
+            // Create User
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -70,22 +94,49 @@ class UserManageController extends Controller
                 'marital_status' => $request->marital_status,
                 'image' => $imagePath,
                 'signature' => $signaturePath,
+                'business_id' => $actor->business_id,
                 'status' => 'approved',
             ]);
 
-            // ✅ Assign Role
-            $role = Role::find($request->role_id);
-            $user->assignRole($role->name);
+            // Use RoleService to assign the role (this may throw exceptions on auth/validation)
+            $assignedRoleName = $this->roleService->assignRole($actor, $user, (int)$request->role_id);
 
-            // ✅ Log Activity
+            // All good -> commit
+            DB::commit();
+
+            // Log activity
             $this->logActivity('create_user');
 
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
-                'data' => $user
+                'data' => $user,
+                'assigned_role' => $assignedRoleName,
             ], 201);
         } catch (Exception $e) {
+            // rollback DB if anything went wrong
+            DB::rollBack();
+
+            // Map common messages to proper status codes if you like
+            $msg = $e->getMessage();
+
+            if ($msg === 'You are not allowed to assign this role.' || $msg === 'You do not have permission to assign roles.') {
+                // Role assignment unauthorized by actor
+                return response()->json([
+                    'success' => false,
+                    'message' => $msg,
+                ], 403);
+            }
+
+            if ($msg === 'User already has this role.') {
+                // unlikely at creation, but handle anyway
+                return response()->json([
+                    'success' => false,
+                    'message' => $msg,
+                ], 409);
+            }
+
+            // Generic failure
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
@@ -94,11 +145,15 @@ class UserManageController extends Controller
         }
     }
 
-    // Get all Users
     public function view()
     {
         try {
-            $users = User::all();
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $users = $this->access->filterByBusiness($actor, \App\Models\User::class)->with('roles')->get();
 
             return response()->json([
                 'success' => true,
@@ -107,17 +162,29 @@ class UserManageController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch User',
+                'message' => 'Failed to fetch users',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    // Get single users
     public function viewDetails($id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $user = User::findOrFail($id);
+
+            // Authorization check using service
+            if (! $this->access->canViewResource($actor, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to view this user.'
+                ], 403);
+            }
 
             return response()->json([
                 'success' => true,
@@ -136,9 +203,22 @@ class UserManageController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $user = User::findOrFail($id);
 
-            // ✅ Validation
+            // Authorization: must be allowed to modify
+            if (! $this->access->canModifyResource($actor, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to modify this user.'
+                ], 403);
+            }
+
+            // Validation
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100',
                 'email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
@@ -152,7 +232,6 @@ class UserManageController extends Controller
                 'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
@@ -160,11 +239,15 @@ class UserManageController extends Controller
                 ], 422);
             }
 
+            DB::beginTransaction();
+
+            // handle image / signature
+            // NOTE: store relative paths (recommended) so Storage::disk('public')->exists() works.
             $imagePath = $user->image;
             $signaturePath = $user->signature;
 
             if ($request->hasFile('image')) {
-
+                // delete old if exists (ensure stored path is relative to disk root)
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
@@ -172,7 +255,7 @@ class UserManageController extends Controller
                 $image = $request->file('image');
                 $imageName = rand(100000, 999999) . '_' . time() . '.' . $image->getClientOriginalExtension();
                 $image->storeAs('users/images', $imageName, 'public');
-                $imagePath = 'storage/users/images/' . $imageName;
+                $imagePath = 'users/images/' . $imageName; // save relative path
             }
 
             if ($request->hasFile('signature')) {
@@ -183,11 +266,10 @@ class UserManageController extends Controller
                 $signature = $request->file('signature');
                 $signatureName = rand(100000, 999999) . '_' . time() . '.' . $signature->getClientOriginalExtension();
                 $signature->storeAs('users/signatures', $signatureName, 'public');
-                $signaturePath = 'storage/users/signatures/' . $signatureName;
+                $signaturePath = 'users/signatures/' . $signatureName; // save relative path
             }
 
-
-            // ✅ User update
+            // Update user fields
             $user->update([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -200,21 +282,37 @@ class UserManageController extends Controller
                 'signature' => $signaturePath,
             ]);
 
-            // ✅ Role update (remove old & assign new)
-            if ($request->role_id) {
-                $role = Role::find($request->role_id);
-                $user->syncRoles([$role->name]);
+            // Role update via RoleService (ensures same auth rules for role assignment)
+            $assignedRoleName = null;
+            if ($request->filled('role_id')) {
+                try {
+                    $assignedRoleName = $this->roleService->syncUserRole($actor, $user, (int)$request->role_id);
+                } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => 'Role not found.'], 404);
+                } catch (Exception $e) {
+                    DB::rollBack();
+                    $msg = $e->getMessage();
+                    if ($msg === 'You are not allowed to assign this role.' || $msg === 'You do not have permission to assign roles.') {
+                        return response()->json(['success' => false, 'message' => $msg], 403);
+                    }
+                    return response()->json(['success' => false, 'message' => 'Failed to update role', 'error' => $msg], 500);
+                }
             }
 
-            // ✅ Activity Log
+            DB::commit();
+
+            // Activity log
             $this->logActivity('update_user');
 
             return response()->json([
                 'success' => true,
                 'message' => 'User updated successfully',
-                'data' => $user
-            ]);
+                'data' => $user,
+                'assigned_role' => $assignedRoleName
+            ], 200);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update User',
@@ -223,47 +321,81 @@ class UserManageController extends Controller
         }
     }
 
+
     // Delete User
     public function delete($id)
     {
         try {
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $user = User::findOrFail($id);
-            // ✅ Delete image file if exists
+
+            // Authorization: only allowed actors can delete
+            if (! $this->access->canModifyResource($actor, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to delete this user.'
+                ], 403);
+            }
+
+            DB::beginTransaction();
+
+            // Delete image file if exists (assumes stored relative path like 'users/images/..')
             if ($user->image && Storage::disk('public')->exists($user->image)) {
                 Storage::disk('public')->delete($user->image);
             }
 
-            // ✅ Delete signature file if exists
+            // Delete signature file if exists
             if ($user->signature && Storage::disk('public')->exists($user->signature)) {
                 Storage::disk('public')->delete($user->signature);
             }
 
-            // ✅ Delete user from database
+            // Optionally remove roles/relations if needed
+            // $user->roles()->detach();
+
+            // Delete user from database
             $user->delete();
 
-            // ✅ Log activity
+            DB::commit();
+
+            // Log activity
             $this->logActivity('delete_user');
 
             return response()->json([
                 'success' => true,
-                'message' => 'User Deleted Successfully'
-            ]);
-        } catch (Exception $e) {
+                'message' => 'User deleted successfully'
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete User',
+                'message' => 'User not found'
+            ], 404);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete user',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    // ✅ Update User Status
+    // Update User Status
     public function statusUpdate(Request $request, $id)
     {
         try {
-            // ✅ Validation (status required & must be active/inactive)
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            // Validation
             $validator = Validator::make($request->all(), [
-                'status' => 'required|in:approved,rejected,pending', 
+                'status' => 'required|in:approved,rejected,pending',
             ]);
 
             if ($validator->fails()) {
@@ -273,14 +405,25 @@ class UserManageController extends Controller
                 ], 422);
             }
 
-            // ✅ Find user
             $user = User::findOrFail($id);
 
-            // ✅ Update status
+            // Authorization: only allowed actors can change status
+            if (! $this->access->canModifyResource($actor, $user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to change this user status.'
+                ], 403);
+            }
+
+            DB::beginTransaction();
+
+            // Update status
             $user->status = $request->status;
             $user->save();
 
-            // ✅ Log activity
+            DB::commit();
+
+            // Log activity (e.g., 'approved_user' or 'rejected_user')
             $this->logActivity("{$request->status}_user");
 
             return response()->json([
@@ -292,7 +435,14 @@ class UserManageController extends Controller
                     'status' => $user->status,
                 ],
             ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user status',

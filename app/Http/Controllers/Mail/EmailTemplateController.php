@@ -9,6 +9,7 @@ use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class EmailTemplateController extends Controller
 {
@@ -35,12 +36,18 @@ class EmailTemplateController extends Controller
                 ], 422);
             }
 
-            $template = EmailTemplate::create($request->only([
-                'template_name',
-                'template_type',
-                'subject',
-                'body',
-            ]));
+            $actor = Auth::user();
+            if (! $actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $template = EmailTemplate::create([
+                'template_name' => $request->template_name,
+                'template_type' => $request->template_type,
+                'subject' => $request->subject,
+                'body' => $request->body,
+                'business_id' => $actor->business_id
+            ]);
 
 
             foreach ($request->used_by as $roleId) {

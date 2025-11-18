@@ -55,7 +55,7 @@ class ProfileController extends Controller
         }
     }
 
-    // ✅ OTP Verification 
+    // ✅ Edit Profile 
     public function edit(Request $request)
     {
         // dd($request->all());
