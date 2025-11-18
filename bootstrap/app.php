@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
-        // 👉 2. Then append CORS middleware to web and api groups
+        // 2. Then append CORS middleware to web and api groups
         $middleware->appendToGroup('web', [
             HandleCors::class,
         ]);
