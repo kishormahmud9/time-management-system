@@ -154,11 +154,17 @@ class AuthController extends Controller
             }
 
             $this->logActivity('login');
+
+            $loggedInUser = Auth::user(); // logged in user
+            $roles = $loggedInUser->getRoleNames();
+
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
                 'token' => $token,
                 'user' => Auth::user(),
+                'role'    => $roles->first(),
             ], 200);
         } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
             // JWT related error (token creation issue)
