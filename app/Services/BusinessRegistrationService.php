@@ -65,10 +65,10 @@ class BusinessRegistrationService
             $business = $this->createBusiness($data, $user->id, false);
             $user->update(['business_id' => $business->id]);
 
-            $token = JWTAuth::fromUser($user);
+            // $token = JWTAuth::fromUser($user);
 
             DB::commit();
-            return compact('user', 'business', 'token');
+            return compact('user', 'business');
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception($e->getMessage());
