@@ -115,6 +115,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
+            // 1) Validate input
             $validator = Validator::make($request->all(), [
                 'email' => 'required|email',
                 'password' => 'required|string|min:6',
@@ -127,59 +128,87 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            $user = \App\Models\User::where('email', $request->email)->first();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials. User not found.',
-                ], 401);
-            }
-
-            if ($user->status !== 'approved') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Your account is not approved yet.',
-                ], 403);
-            }
-
+            // 2) Try login first (email + password একসাথে)
             if (!$token = Auth::attempt([
                 'email' => $request->email,
                 'password' => $request->password,
             ])) {
+
+                // Check if email exists
+                $userExists = \App\Models\User::where('email', $request->email)->exists();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials. Wrong password.',
+                    'message' => $userExists
+                        ? 'Wrong password.'
+                        : 'Email does not exist.',
                 ], 401);
             }
 
+        // 3) Login successful → now get user
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+
+            // 4) Status check
+            if ($user->status !== 'approved') {
+
+                // token invalidate kore dei
+                Auth::logout();
+
+                if ($user->status === 'pending') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Your account is pending approval. Please wait for an admin to review your request.',
+                    ], 403);
+                }
+
+                if ($user->status === 'rejected') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Your account request has been rejected. Please contact support if you think this is a mistake.',
+                    ], 403);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is not allowed to log in.',
+                ], 403);
+            }
+
+            // 5) ✅ Role check (Spatie roles)
+            $roles = $user->getRoleNames();
+
+            if ($roles->isEmpty()) {
+                // kono role assign nai → login allow korbo na
+                Auth::logout();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No role is assigned to your account. Please contact the administrator.',
+                ], 403);
+            }
+
+            $role = $roles->first();
+
+            // 6) Everything ok → login successful
             $this->logActivity('login');
-
-            $loggedInUser = Auth::user(); // logged in user
-            $roles = $loggedInUser->getRoleNames();
-
 
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
-                'token' => $token,
-                'user' => Auth::user(),
-                'role'    => $roles->first(),
+                'token'   => $token,
+                'user'    => $user,
+                'role'    => $role,
             ], 200);
-        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
-            // JWT related error (token creation issue)
-            return response()->json([
-                'success' => false,
-                'message' => 'Could not create token: ' . $e->getMessage(),
-            ], 500);
         } catch (\Exception $e) {
-            // Any other unexpected error
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong: ' . $e->getMessage(),
             ], 500);
         }
     }
+
+
 
 
     // ✅ logged out user and destroy auth token
