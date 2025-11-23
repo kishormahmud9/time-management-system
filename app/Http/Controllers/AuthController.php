@@ -15,6 +15,9 @@ use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use App\Mail\WelcomeEmail;
+use App\Mail\OTPEmail;
+use App\Mail\PasswordResetSuccessEmail;
 
 class AuthController extends Controller
 {
@@ -53,6 +56,14 @@ class AuthController extends Controller
 
             // Generate JWT token
             $token = JWTAuth::fromUser($user);
+
+            // Send welcome email
+            try {
+                Mail::to($user->email)->send(new WelcomeEmail($user));
+            } catch (\Exception $e) {
+                // Log email error but don't fail registration
+                \Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -93,6 +104,17 @@ class AuthController extends Controller
             }
 
             $data = $this->businessService->registerOwner($request->all());
+
+            // Send welcome email to business owner
+            try {
+                $user = User::where('email', $request->email)->first();
+                if ($user) {
+                    Mail::to($user->email)->send(new WelcomeEmail($user));
+                }
+            } catch (\Exception $e) {
+                // Log email error but don't fail registration
+                \Log::error('Failed to send welcome email to business owner: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -269,10 +291,7 @@ class AuthController extends Controller
             );
 
             // 🔹 Send OTP email
-            Mail::raw("Your password reset OTP is: $otp (valid for 5 minutes)", function ($message) use ($user) {
-                $message->to($user->email)
-                    ->subject('Password Reset OTP');
-            });
+            Mail::to($user->email)->send(new OTPEmail($user, $otp));
 
             // 🔹 Success response
             return response()->json([
@@ -402,6 +421,14 @@ class AuthController extends Controller
 
             // ✅ Delete password reset record
             DB::table('password_resets')->where('email', $request->email)->delete();
+
+            // Send password reset success email
+            try {
+                Mail::to($user->email)->send(new PasswordResetSuccessEmail($user));
+            } catch (\Exception $e) {
+                // Log email error but don't fail password reset
+                \Log::error('Failed to send password reset success email: ' . $e->getMessage());
+            }
 
             $this->logActivity('reset_password');
             return response()->json([
