@@ -18,6 +18,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use App\Mail\WelcomeEmail;
 use App\Mail\OTPEmail;
 use App\Mail\PasswordResetSuccessEmail;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -62,7 +63,7 @@ class AuthController extends Controller
                 Mail::to($user->email)->send(new WelcomeEmail($user));
             } catch (\Exception $e) {
                 // Log email error but don't fail registration
-                \Log::error('Failed to send welcome email: ' . $e->getMessage());
+                Log::error('Failed to send welcome email: ' . $e->getMessage());
             }
 
             return response()->json([
@@ -113,7 +114,7 @@ class AuthController extends Controller
                 }
             } catch (\Exception $e) {
                 // Log email error but don't fail registration
-                \Log::error('Failed to send welcome email to business owner: ' . $e->getMessage());
+                Log::error('Failed to send welcome email to business owner: ' . $e->getMessage());
             }
 
             return response()->json([
