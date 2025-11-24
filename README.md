@@ -628,6 +628,412 @@ GET    /api/email-template/{id}
 PUT    /api/email-template/{id}
 DELETE /api/email-template/{id}
 
+# Timesheet Management
+POST   /api/timesheet
+GET    /api/timesheet
+GET    /api/timesheet/{id}
+PUT    /api/timesheet/{id}
+DELETE /api/timesheet/{id}
+PATCH  /api/timesheet/{id}
+
+# Activity Logs
+GET    /api/manage-activity
+
+# Role & Permission Assignment
+POST   /api/role-has-permission
+POST   /api/user-has-role
+```
+
+---
+
+## ⏰ Timesheet Management API
+
+### **TimesheetManageController**
+**File**: `app/Http/Controllers/Timesheet/TimesheetManageController.php`
+
+**Routes** (System Admin & Business Admin):
+
+---
+
+### **1. Create Timesheet**
+```http
+POST /api/timesheet
+```
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_id": 5,
+  "client_id": 2,
+  "project_id": 3,
+  "start_date": "2025-11-18",
+  "end_date": "2025-11-24",
+  "status": "draft",
+  "remarks": "Weekly timesheet for Project X",
+  "entries": [
+    {
+      "entry_date": "2025-11-18",
+      "daily_hours": 8,
+      "extra_hours": 2,
+      "vacation_hours": 0,
+      "note": "Worked on feature development"
+    },
+    {
+      "entry_date": "2025-11-19",
+      "daily_hours": 8,
+      "extra_hours": 0,
+      "vacation_hours": 0,
+      "note": "Bug fixes and testing"
+    }
+  ]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Timesheet created successfully",
+  "data": {
+    "id": 1,
+    "business_id": 1,
+    "user_id": 5,
+    "client_id": 2,
+    "project_id": 3,
+    "start_date": "2025-11-18",
+    "end_date": "2025-11-24",
+    "status": "draft",
+    "total_hours": 18.00,
+    "remarks": "Weekly timesheet for Project X",
+    "entries": [
+      {
+        "id": 1,
+        "entry_date": "2025-11-18",
+        "daily_hours": 8.00,
+        "extra_hours": 2.00,
+        "vacation_hours": 0.00,
+        "note": "Worked on feature development"
+      },
+      {
+        "id": 2,
+        "entry_date": "2025-11-19",
+        "daily_hours": 8.00,
+        "extra_hours": 0.00,
+        "vacation_hours": 0.00,
+        "note": "Bug fixes and testing"
+      }
+    ]
+  }
+}
+```
+
+**Validation Rules:**
+- `user_id`: Required, must exist in users table
+- `client_id`: Optional, must exist in parties table
+- `project_id`: Optional, must exist in projects table
+- `start_date`: Required, valid date
+- `end_date`: Required, must be >= start_date
+- `status`: Optional, one of: draft, submitted, approved, rejected
+- `entries.*.entry_date`: Required, must be between start_date and end_date
+- `entries.*.daily_hours`: Required, 0-24
+- `entries.*.extra_hours`: Optional, 0-24
+- `entries.*.vacation_hours`: Optional, 0-24
+
+---
+
+### **2. List Timesheets**
+```http
+GET /api/timesheet
+```
+
+**Query Parameters:**
+- `status` - Filter by status (draft, submitted, approved, rejected)
+- `user_id` - Filter by user
+- `client_id` - Filter by client
+- `project_id` - Filter by project
+- `from_date` - Filter start date (start_date >= from_date)
+- `to_date` - Filter end date (end_date <= to_date)
+
+**Example:**
+```http
+GET /api/timesheet?status=submitted&user_id=5&from_date=2025-11-01
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "business_id": 1,
+      "user_id": 5,
+      "client_id": 2,
+      "project_id": 3,
+      "start_date": "2025-11-18",
+      "end_date": "2025-11-24",
+      "status": "submitted",
+      "total_hours": 40.00,
+      "submitted_at": "2025-11-24T10:30:00Z",
+      "user": {
+        "id": 5,
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "client": {
+        "id": 2,
+        "name": "ABC Corporation"
+      },
+      "project": {
+        "id": 3,
+        "name": "Website Redesign"
+      },
+      "entries": [...]
+    }
+  ]
+}
+```
+
+**Features:**
+- ✅ Business-level filtering (only see your business data)
+- ✅ Multiple filter options
+- ✅ Eager loads relationships (user, client, project, approver, entries)
+- ✅ Latest first ordering
+
+---
+
+### **3. View Timesheet Details**
+```http
+GET /api/timesheet/{id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "business_id": 1,
+    "user_id": 5,
+    "client_id": 2,
+    "project_id": 3,
+    "approved_by": null,
+    "start_date": "2025-11-18",
+    "end_date": "2025-11-24",
+    "status": "draft",
+    "total_hours": 40.00,
+    "remarks": "Weekly timesheet",
+    "submitted_at": null,
+    "approved_at": null,
+    "user": {...},
+    "client": {...},
+    "project": {...},
+    "approver": null,
+    "entries": [
+      {
+        "id": 1,
+        "entry_date": "2025-11-18",
+        "daily_hours": 8.00,
+        "extra_hours": 0.00,
+        "vacation_hours": 0.00,
+        "note": "Regular work"
+      }
+    ]
+  }
+}
+```
+
+**Error (403 Forbidden):**
+```json
+{
+  "success": false,
+  "message": "You are not allowed to view this timesheet."
+}
+```
+
+---
+
+### **4. Update Timesheet**
+```http
+PUT /api/timesheet/{id}
+```
+
+**Request Body:**
+```json
+{
+  "client_id": 2,
+  "project_id": 3,
+  "start_date": "2025-11-18",
+  "end_date": "2025-11-24",
+  "remarks": "Updated remarks",
+  "entries": [
+    {
+      "entry_date": "2025-11-18",
+      "daily_hours": 8,
+      "extra_hours": 1,
+      "vacation_hours": 0,
+      "note": "Updated entry"
+    }
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Timesheet updated successfully",
+  "data": {...}
+}
+```
+
+**Restrictions:**
+- ❌ Only draft timesheets can be edited
+- ❌ Cannot edit submitted/approved/rejected timesheets
+
+**Error (400 Bad Request):**
+```json
+{
+  "success": false,
+  "message": "Only draft timesheets can be edited."
+}
+```
+
+---
+
+### **5. Delete Timesheet**
+```http
+DELETE /api/timesheet/{id}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Timesheet deleted successfully"
+}
+```
+
+**Restrictions:**
+- ❌ Only draft timesheets can be deleted
+- ✅ Entries are cascade deleted automatically
+
+---
+
+### **6. Update Timesheet Status**
+```http
+PATCH /api/timesheet/{id}
+```
+
+**Request Body:**
+```json
+{
+  "status": "submitted"
+}
+```
+
+**Valid Status Values:**
+- `draft` - Initial state, can be edited
+- `submitted` - Submitted for approval
+- `approved` - Approved by manager
+- `rejected` - Rejected by manager
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Timesheet submitted successfully",
+  "data": {
+    "id": 1,
+    "status": "submitted",
+    "submitted_at": "2025-11-24T10:30:00Z"
+  }
+}
+```
+
+**Status Workflow:**
+```
+draft → submitted → approved/rejected
+```
+
+**Auto-set Fields:**
+- `submitted` status → Sets `submitted_at` timestamp
+- `approved` status → Sets `approved_by` and `approved_at`
+
+---
+
+### **Access Control:**
+
+| Role | Create | View Own | View All | Update | Delete | Approve |
+|------|--------|----------|----------|--------|--------|---------|
+| **System Admin** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Business Admin** | ✅ | ✅ | ✅ (Business) | ✅ | ✅ | ✅ |
+| **Staff** | ✅ | ✅ | ❌ | ✅ (Own) | ✅ (Own) | ❌ |
+| **User** | ✅ | ✅ | ❌ | ✅ (Own) | ✅ (Own) | ❌ |
+
+---
+
+### **Business Logic:**
+
+1. **Auto-calculate Total Hours:**
+   - Automatically sums `daily_hours + extra_hours` from all entries
+   - Updates `total_hours` field
+
+2. **Business Isolation:**
+   - Users can only see timesheets from their business
+   - System Admin can see all timesheets
+
+3. **Status Protection:**
+   - Draft timesheets: Can edit and delete
+   - Submitted/Approved/Rejected: Read-only
+
+4. **Entry Validation:**
+   - Entry dates must be within timesheet period
+   - Hours must be 0-24
+   - Unique entry per date per timesheet
+
+---
+
+### **Example Workflow:**
+
+```javascript
+// 1. Create draft timesheet
+POST /api/timesheet
+{
+  "user_id": 5,
+  "start_date": "2025-11-18",
+  "end_date": "2025-11-24",
+  "status": "draft",
+  "entries": [...]
+}
+
+// 2. Update if needed
+PUT /api/timesheet/1
+{
+  "entries": [...]  // Updated entries
+}
+
+// 3. Submit for approval
+PATCH /api/timesheet/1
+{
+  "status": "submitted"
+}
+
+// 4. Manager approves
+PATCH /api/timesheet/1
+{
+  "status": "approved"
+}
+```
+
+---
+
 # Activity Logs
 GET    /api/manage-activity
 

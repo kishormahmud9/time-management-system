@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mail;
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
 use App\Models\EmailTemplateUsedBy;
+use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,14 @@ use Illuminate\Support\Facades\Auth;
 class EmailTemplateController extends Controller
 {
     use UserActivityTrait;
+    
+    protected UserAccessService $access;
+
+    public function __construct(UserAccessService $access)
+    {
+        $this->access = $access;
+    }
+
     /**
      * Create new template
      */
@@ -78,7 +87,15 @@ class EmailTemplateController extends Controller
     public function view()
     {
         try {
-            $templates = EmailTemplate::where('status', 'active')->get();
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            // ✅ Filter by business
+            $templates = $this->access->filterByBusiness($actor, EmailTemplate::class)
+                ->where('status', 'active')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -97,13 +114,19 @@ class EmailTemplateController extends Controller
     public function viewDetails($id)
     {
         try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $template = EmailTemplate::findOrFail($id);
 
-            if (!$template) {
+            // ✅ Check access permission
+            if (!$this->access->canViewResource($actor, $template)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Template not found'
-                ], 404);
+                    'message' => 'You are not allowed to view this template.'
+                ], 403);
             }
 
             return response()->json([
@@ -124,14 +147,21 @@ class EmailTemplateController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $template = EmailTemplate::findOrFail($id);
 
-            if (!$template) {
+            // ✅ Check modify permission
+            if (!$this->access->canModifyResource($actor, $template)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Template not found'
-                ], 404);
+                    'message' => 'You are not allowed to modify this template.'
+                ], 403);
             }
+
             $validator = Validator::make($request->all(), [
                 'template_name' => 'required|string|unique:email_templates,template_name',
                 'template_type' => 'nullable|string|max:100',
@@ -178,6 +208,11 @@ class EmailTemplateController extends Controller
     public function delete($id)
     {
         try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
             $template = EmailTemplate::find($id);
 
             if (!$template) {
@@ -185,6 +220,14 @@ class EmailTemplateController extends Controller
                     'success' => false,
                     'message' => 'Template not found'
                 ], 404);
+            }
+
+            // ✅ Check modify permission
+            if (!$this->access->canModifyResource($actor, $template)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not allowed to delete this template.'
+                ], 403);
             }
 
             $template->delete();

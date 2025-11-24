@@ -72,14 +72,14 @@ class UserManageController extends Controller
                 $image = $request->file('image');
                 $imageName = rand(100000, 999999) . '_' . time() . '.' . $image->getClientOriginalExtension();
                 $image->storeAs('users/images', $imageName, 'public');
-                $imagePath = 'storage/users/images/' . $imageName;
+                $imagePath = 'users/images/' . $imageName;  // ✅ Fixed: Removed 'storage/' prefix
             }
 
             if ($request->hasFile('signature')) {
                 $signature = $request->file('signature');
                 $signatureName = rand(100000, 999999) . '_' . time() . '.' . $signature->getClientOriginalExtension();
                 $signature->storeAs('users/signatures', $signatureName, 'public');
-                $signaturePath = 'storage/users/signatures/' . $signatureName;
+                $signaturePath = 'users/signatures/' . $signatureName;  // ✅ Fixed: Removed 'storage/' prefix
             }
 
             // Create User

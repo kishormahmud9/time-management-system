@@ -10,6 +10,7 @@ use App\Http\Controllers\RoleAndPermission\PermissionController;
 use App\Http\Controllers\RoleAndPermission\RoleController;
 use App\Http\Controllers\RoleAndPermission\RoleHasPermissionController;
 use App\Http\Controllers\RoleAndPermission\UserHasRoleController;
+use App\Http\Controllers\Timesheet\TimesheetManageController;
 use App\Http\Controllers\User\UserActivityLogController;
 use App\Http\Controllers\User\UserManageController;
 
@@ -35,6 +36,17 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/profile', 'view');
         Route::post('/profile-edit', 'edit');
         Route::post('/change-password', 'changePassword');
+    });
+
+    //**** Timesheet Related Route (All Authenticated Users) ****//
+    Route::controller(TimesheetManageController::class)->group(function () {
+        Route::post('/timesheet', 'store');
+        Route::get('/timesheet', 'view');
+        Route::get('/timesheet/{id}', 'viewDetails');
+        Route::put('/timesheet/{id}', 'update');
+        Route::delete('/timesheet/{id}', 'delete');
+        Route::patch('/timesheet/{id}', 'statusUpdate');
+        Route::get('/timesheet-defaults', 'getDefaults');
     });
 });
 
@@ -70,12 +82,8 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
         Route::post('/permission/{id}', 'update');
         Route::delete('/permission/{id}', 'delete');
     });
-});
 
-//////////////////// Role & Permission Route Only for Sytem Admin and Busines Admin /////////////////
-Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(function () {
-
-    //**** Role Related Route ****//
+      //**** Role Related Route ****//
     Route::controller(RoleController::class)->group(function () {
         Route::post('/role', 'store');
         Route::get('/roles', 'view');
@@ -83,6 +91,10 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::post('/role/{id}', 'update');
         Route::delete('/role/{id}', 'delete');
     });
+});
+
+//////////////////// Role & Permission Route Only for Sytem Admin and Busines Admin /////////////////
+Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(function () {
 
     //**** RoleHasPermission Related Routes ****//
     Route::controller(RoleHasPermissionController::class)->group(function () {

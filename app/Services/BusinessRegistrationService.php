@@ -112,6 +112,6 @@ class BusinessRegistrationService
         if (!$file) return null;
         $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
         $file->storeAs($path, $fileName, 'public');
-        return 'storage/' . $path . '/' . $fileName;
+        return $path . '/' . $fileName;  // ✅ Fixed: Removed 'storage/' prefix
     }
 }

@@ -99,9 +99,8 @@
         }
         
         .feature-item {
-            display: flex;
-            align-items: flex-start;
             margin-bottom: 15px;
+            width: 100%;
         }
         
         .feature-icon {
@@ -109,20 +108,23 @@
             height: 24px;
             background-color: #667eea;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            flex-shrink: 0;
             color: #ffffff;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
+            line-height: 24px;
+            text-align: center;
+            display: inline-block;
+            vertical-align: middle;
         }
         
         .feature-text {
             color: #4a5568;
             font-size: 15px;
             line-height: 1.6;
+            display: inline-block;
+            vertical-align: middle;
+            padding-left: 12px;
+            width: calc(100% - 40px);
         }
         
         .footer {
@@ -204,25 +206,49 @@
             <div class="features">
                 <p style="font-size: 18px; font-weight: 600; color: #2d3748; margin-bottom: 15px;">What you can do:</p>
                 
-                <div class="feature-item">
-                    <div class="feature-icon">✓</div>
-                    <div class="feature-text">Track your daily work hours and activities</div>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td width="24" style="vertical-align: top; padding-right: 12px;">
+                            <div class="feature-icon">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div class="feature-text">Track your daily work hours and activities</div>
+                        </td>
+                    </tr>
+                </table>
                 
-                <div class="feature-item">
-                    <div class="feature-icon">✓</div>
-                    <div class="feature-text">Manage multiple projects and tasks</div>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td width="24" style="vertical-align: top; padding-right: 12px;">
+                            <div class="feature-icon">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div class="feature-text">Manage multiple projects and tasks</div>
+                        </td>
+                    </tr>
+                </table>
                 
-                <div class="feature-item">
-                    <div class="feature-icon">✓</div>
-                    <div class="feature-text">Generate detailed reports and analytics</div>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td width="24" style="vertical-align: top; padding-right: 12px;">
+                            <div class="feature-icon">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div class="feature-text">Generate detailed reports and analytics</div>
+                        </td>
+                    </tr>
+                </table>
                 
-                <div class="feature-item">
-                    <div class="feature-icon">✓</div>
-                    <div class="feature-text">Collaborate with your team members</div>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                    <tr>
+                        <td width="24" style="vertical-align: top; padding-right: 12px;">
+                            <div class="feature-icon">✓</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div class="feature-text">Collaborate with your team members</div>
+                        </td>
+                    </tr>
+                </table>
             </div>
             
             <div class="divider"></div>
