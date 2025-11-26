@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Project;
+use App\Models\Party;
+use App\Models\Holiday;
+use App\Notifications\TimesheetSubmitted;
+use App\Notifications\TimesheetStatusUpdated;
+use Illuminate\Support\Facades\Notification;
 
 class TimesheetManageController extends Controller
 {
@@ -65,6 +71,35 @@ class TimesheetManageController extends Controller
                     'success' => false,
                     'errors' => $validator->errors()
                 ], 422);
+            }
+
+            // Validate Project and Client belong to business
+            if ($request->project_id) {
+                $project = Project::find($request->project_id);
+                if (!$project || $project->business_id !== $actor->business_id) {
+                    return response()->json(['success' => false, 'message' => 'Invalid Project ID'], 422);
+                }
+            }
+            if ($request->client_id) {
+                $client = Party::find($request->client_id);
+                if (!$client || $client->business_id !== $actor->business_id) {
+                    return response()->json(['success' => false, 'message' => 'Invalid Client ID'], 422);
+                }
+            }
+
+            // Validate Holidays
+            if ($request->has('entries')) {
+                $holidayDates = Holiday::where('business_id', $actor->business_id)
+                    ->whereIn('date', array_column($request->entries, 'entry_date'))
+                    ->pluck('date')
+                    ->toArray();
+                
+                if (!empty($holidayDates)) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Cannot submit timesheet for holiday dates: ' . implode(', ', $holidayDates)
+                    ], 422);
+                }
             }
 
             DB::beginTransaction();
@@ -118,9 +153,15 @@ class TimesheetManageController extends Controller
                         new TimesheetSubmittedEmail($timesheet, $request->email)
                     );
                 } catch (Exception $mailException) {
-                    // Log email error but don't fail the request
                     \Log::error('Failed to send timesheet email: ' . $mailException->getMessage());
                 }
+            }
+
+            // Notify Approver if submitted
+            if ($timesheet->status === 'submitted') {
+                // Find approvers (e.g., Business Admin)
+                $approvers = User::role('Business Admin')->where('business_id', $actor->business_id)->get();
+                Notification::send($approvers, new TimesheetSubmitted($timesheet));
             }
 
             $this->logActivity('create_timesheet');
@@ -430,6 +471,17 @@ class TimesheetManageController extends Controller
             }
 
             $timesheet->update($updateData);
+
+            // Notify User on status change
+            if (in_array($request->status, ['approved', 'rejected'])) {
+                $timesheet->user->notify(new TimesheetStatusUpdated($timesheet, $request->status));
+            }
+            
+            // Notify Approver if submitted
+            if ($request->status === 'submitted') {
+                 $approvers = User::role('Business Admin')->where('business_id', $actor->business_id)->get();
+                 Notification::send($approvers, new TimesheetSubmitted($timesheet));
+            }
 
             DB::commit();
 
