@@ -48,6 +48,33 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('/timesheet/{id}', 'statusUpdate');
         Route::get('/timesheet-defaults', 'getDefaults');
     });
+
+
+    //**** Party Related Route ****//
+    Route::controller(PartyController::class)->group(function () {
+        Route::get('/parties', 'view');
+        Route::get('/clients', 'getClient');
+        Route::get('/vendors', 'getVendor');
+        Route::get('/employees', 'getEmployee');
+        Route::get('/party/{id}', 'viewDetails');
+    });
+    //**** Email Template Related Route ****//
+    Route::controller(EmailTemplateController::class)->group(function () {
+        Route::get('/email-template', 'view');
+        Route::get('/email-template/{id}', 'viewDetails');
+    });
+
+    //**** Permission Related Route ****//
+    Route::controller(PermissionController::class)->group(function () {
+        Route::get('/permissions', 'view');
+        Route::get('/permission/{id}', 'viewDetails');
+    });
+
+    //**** Role Related Route ****//
+    Route::controller(RoleController::class)->group(function () {
+        Route::get('/roles', 'view');
+        Route::get('/role/{id}', 'viewDetails');
+    });
 });
 
 
@@ -77,17 +104,17 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
         Route::post('/permission', 'store');
-        Route::get('/permissions', 'view');
-        Route::get('/permission/{id}', 'viewDetails');
+        // Route::get('/permissions', 'view');
+        // Route::get('/permission/{id}', 'viewDetails');
         Route::post('/permission/{id}', 'update');
         Route::delete('/permission/{id}', 'delete');
     });
 
-      //**** Role Related Route ****//
+    //**** Role Related Route ****//
     Route::controller(RoleController::class)->group(function () {
         Route::post('/role', 'store');
-        Route::get('/roles', 'view');
-        Route::get('/role/{id}', 'viewDetails');
+        // Route::get('/roles', 'view');
+        // Route::get('/role/{id}', 'viewDetails');
         Route::post('/role/{id}', 'update');
         Route::delete('/role/{id}', 'delete');
     });
@@ -124,11 +151,11 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
     //**** Party Related Route ****//
     Route::controller(PartyController::class)->group(function () {
         Route::post('/party', 'store');
-        Route::get('/parties', 'view');
-        Route::get('/clients', 'getClient');
-        Route::get('/vendors', 'getVendor');
-        Route::get('/employees', 'getEmployee');
-        Route::get('/party/{id}', 'viewDetails');
+        // Route::get('/parties', 'view');
+        // Route::get('/clients', 'getClient');
+        // Route::get('/vendors', 'getVendor');
+        // Route::get('/employees', 'getEmployee');
+        // Route::get('/party/{id}', 'viewDetails');
         Route::put('/party/{id}', 'update');
         Route::delete('/party/{id}', 'delete');
     });
@@ -136,8 +163,8 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
     //**** Email Template Related Route ****//
     Route::controller(EmailTemplateController::class)->group(function () {
         Route::post('/email-template', 'store');
-        Route::get('/email-template', 'view');
-        Route::get('/email-template/{id}', 'viewDetails');
+        // Route::get('/email-template', 'view');
+        // Route::get('/email-template/{id}', 'viewDetails');
         Route::put('/email-template/{id}', 'update');
         Route::delete('/email-template/{id}', 'delete');
     });
