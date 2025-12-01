@@ -178,19 +178,20 @@ class DemoDataSeeder extends Seeder
         $client1 = Party::create([
             'business_id' => $business->id,
             'name' => 'ABC Corporation',
-            'email' => 'contact@abc.com',
+            // 'email' => 'contact@abc.com',
             'phone' => '+1555555555',
             'address' => '456 Business Ave, New York, NY',
-            'type' => 'client',
+            'zip_code' => '1234',
         ]);
 
         $client2 = Party::create([
             'business_id' => $business->id,
             'name' => 'XYZ Industries',
-            'email' => 'info@xyz.com',
+            // 'email' => 'info@xyz.com',
             'phone' => '+1666666666',
             'address' => '789 Industry Blvd, Los Angeles, CA',
-            'type' => 'client',
+            'party_type' => 'client',
+            'zip_code' => '1234',
         ]);
 
         // Create Projects
@@ -276,38 +277,38 @@ class DemoDataSeeder extends Seeder
         $holidays = [
             [
                 'business_id' => $business->id,
-                'name' => 'New Year\'s Day',
-                'date' => now()->year . '-01-01',
+                // 'holidays' => 'New Year\'s Day',
+                'holiday_date' => now()->year . '-01-01',
                 'description' => 'New Year celebration',
             ],
             [
                 'business_id' => $business->id,
-                'name' => 'Independence Day',
-                'date' => now()->year . '-07-04',
+                // 'holidays' => 'Independence Day',
+                'holiday_date' => now()->year . '-07-04',
                 'description' => 'Independence Day celebration',
             ],
             [
                 'business_id' => $business->id,
-                'name' => 'Labor Day',
-                'date' => now()->year . '-09-01',
+                // 'holidays' => 'Labor Day',
+                'holiday_date' => now()->year . '-09-01',
                 'description' => 'Labor Day holiday',
             ],
             [
                 'business_id' => $business->id,
-                'name' => 'Thanksgiving',
-                'date' => now()->year . '-11-28',
+                // 'holidays' => 'Thanksgiving',
+                'holiday_date' => now()->year . '-11-28',
                 'description' => 'Thanksgiving holiday',
             ],
             [
                 'business_id' => $business->id,
-                'name' => 'Christmas',
-                'date' => now()->year . '-12-25',
+                // 'holidays' => 'Christmas',
+                'holiday_date' => now()->year . '-12-25',
                 'description' => 'Christmas celebration',
             ],
             [
                 'business_id' => $business->id,
-                'name' => 'Company Anniversary',
-                'date' => now()->year . '-03-15',
+                // 'holidays' => 'Company Anniversary',
+                'holiday_date' => now()->year . '-03-15',
                 'description' => 'Company founding anniversary',
             ],
         ];
