@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Project;
 use App\Models\Party;
 use App\Models\Holiday;
+use App\Models\User;
 use App\Notifications\TimesheetSubmitted;
 use App\Notifications\TimesheetStatusUpdated;
 use Illuminate\Support\Facades\Notification;

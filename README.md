@@ -1,1228 +1,776 @@
-﻿# 📋 Timesheet Management System - Complete Project Review
+﻿# 📋 Timesheet Management System
 
-## 🎯 Project Overview
+[![Laravel](https://img.shields.io/badge/Laravel-11.31-red.svg)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-This is a **Laravel 11** based **Timesheet Management System** backend API. This system allows various business organizations to manage their employees' working hours, projects, and client management.
-
-### 🔧 Technologies Used
-- **Framework**: Laravel 11.31
-- **PHP Version**: 8.2+
-- **Authentication**: JWT (JSON Web Token) - `tymon/jwt-auth`
-- **Authorization**: Role & Permission Management - `spatie/laravel-permission`
-- **Database**: SQLite (default), MySQL/PostgreSQL supported
+A comprehensive **multi-tenant timesheet management system** built with Laravel 11, designed for businesses to manage employee working hours, projects, clients, and timesheet approvals.
 
 ---
 
-## 📁 Project Structure
+## 📌 Table of Contents
+
+- [Project Overview](#-project-overview)
+- [Key Features](#-key-features)
+- [Technology Stack](#-technology-stack)
+- [Installation & Setup](#-installation--setup)
+- [Project Structure](#-project-structure)
+- [API Endpoints](#-api-endpoints)
+- [Database Schema](#-database-schema)
+- [Authentication & Authorization](#-authentication--authorization)
+- [Developer Guide](#-developer-guide)
+- [Testing](#-testing)
+- [Deployment](#-deployment)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 📌 Project Overview
+
+The **Timesheet Management System** is a robust, multi-tenant SaaS application that enables businesses to:
+
+- 📊 Track employee working hours (daily, weekly, monthly)
+- 👥 Manage multiple businesses with data isolation
+- 📝 Create and manage projects and clients
+- ✅ Implement approval workflows for timesheets
+- 📧 Send email notifications
+- 📈 Generate reports (PDF, Excel)
+- 🔐 Role-based access control (RBAC)
+
+### Use Cases
+
+- **HR Departments:** Track employee hours and manage payroll
+- **Project Managers:** Monitor project time allocation
+- **Consulting Firms:** Bill clients based on timesheet entries
+- **Remote Teams:** Track distributed team working hours
+- **Freelancers:** Manage multiple client projects
+
+---
+
+## 📌 Key Features
+
+### 🔐 Authentication & Security
+- ✅ JWT-based authentication
+- ✅ OTP-based password reset
+- ✅ Role-based access control (4 roles)
+- ✅ Permission management system
+- ✅ Activity logging (IP, User Agent)
+- ✅ Secure password hashing
+
+### 🏢 Multi-Tenancy
+- ✅ Business-level data isolation
+- ✅ Business-specific users, projects, clients
+- ✅ Business-specific holidays and defaults
+- ✅ Business owner registration workflow
+
+### ⏰ Timesheet Management
+- ✅ Create, read, update, delete timesheets
+- ✅ Daily time entries (regular, extra, vacation hours)
+- ✅ Timesheet status workflow (draft → submitted → approved/rejected)
+- ✅ Attachment support (PDF, DOC, images)
+- ✅ Total hours auto-calculation
+- ✅ Holiday validation
+
+### 👥 User Management
+- ✅ User CRUD operations
+- ✅ Profile management
+- ✅ User status workflow (approved/pending/rejected)
+- ✅ Role assignment
+- ✅ Activity logging
+
+### 📊 Project & Client Management
+- ✅ Project CRUD operations
+- ✅ Party management (clients, vendors, employees)
+- ✅ Business-specific filtering
+- ✅ Project-client relationships
+
+### 📧 Email System
+- ✅ Custom email templates
+- ✅ Welcome emails
+- ✅ OTP emails
+- ✅ Timesheet notifications
+- ✅ Password reset success emails
+
+### 📈 Reporting & Analytics
+- ✅ PDF report generation
+- ✅ Excel export functionality
+- ✅ Dashboard statistics
+- ✅ Monthly overview
+- ✅ Timesheet status analytics
+
+---
+
+## 📌 Technology Stack
+
+### Backend
+- **Framework:** Laravel 11.31
+- **PHP Version:** 8.2+
+- **Database:** SQLite (default), MySQL/PostgreSQL supported
+- **Authentication:** JWT (tymon/jwt-auth ^2.2)
+- **Authorization:** Spatie Laravel Permission (^6.21)
+
+### Additional Packages
+- **PDF Generation:** barryvdh/laravel-dompdf (^3.1)
+- **Excel Export:** maatwebsite/excel (^1.1)
+- **File Storage:** Local filesystem (configurable)
+
+### Development Tools
+- **Code Style:** Laravel Pint (^1.13)
+- **Testing:** PHPUnit (^11.0.1)
+- **Docker:** Laravel Sail (^1.26)
+- **Logging:** Laravel Pail (^1.1)
+
+---
+
+## 📌 Installation & Setup
+
+### Prerequisites
+
+- PHP 8.2 or higher
+- Composer
+- Node.js & NPM (for frontend assets)
+- SQLite (default) or MySQL/PostgreSQL
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/your-username/timesheet-management-system.git
+cd timesheet-management-system/backend
+```
+
+### Step 2: Install Dependencies
+
+```bash
+composer install
+npm install
+```
+
+### Step 3: Environment Configuration
+
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan jwt:secret
+```
+
+### Step 4: Configure Environment Variables
+
+Edit `.env` file:
+
+```env
+APP_NAME="Timesheet Management System"
+APP_ENV=local
+APP_KEY=base64:...
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=sqlite
+# Or for MySQL:
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=timesheet_db
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+JWT_SECRET=your-jwt-secret-key
+
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+### Step 5: Database Setup
+
+```bash
+# Create SQLite database (if using SQLite)
+touch database/database.sqlite
+
+# Run migrations
+php artisan migrate
+
+# Seed database (optional)
+php artisan db:seed
+```
+
+### Step 6: Storage Setup
+
+```bash
+php artisan storage:link
+```
+
+### Step 7: Start Development Server
+
+```bash
+# Option 1: Using Laravel's built-in server
+php artisan serve
+
+# Option 2: Using Laravel Sail (Docker)
+./vendor/bin/sail up
+
+# Option 3: Using the dev script (includes queue, logs, vite)
+composer dev
+```
+
+The API will be available at `http://localhost:8000`
+
+---
+
+## 📌 Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── Http/Controllers/     # All API Controllers
-│   ├── Models/               # Database Models
-│   ├── Services/             # Business Logic Services
-│   ├── Helpers/              # Helper Functions
-│   └── Traits/               # Reusable Traits
+│   ├── Exceptions/              # Exception handlers
+│   ├── Exports/                 # Excel export classes
+│   ├── Helpers/                 # Helper functions
+│   │   └── helpers.php
+│   ├── Http/
+│   │   ├── Controllers/         # API Controllers
+│   │   │   ├── AuthController.php
+│   │   │   ├── Company/
+│   │   │   │   └── BusinessController.php
+│   │   │   ├── Party/
+│   │   │   │   └── PartyController.php
+│   │   │   ├── Profile/
+│   │   │   │   └── ProfileController.php
+│   │   │   ├── RoleAndPermission/
+│   │   │   │   ├── RoleController.php
+│   │   │   │   ├── PermissionController.php
+│   │   │   │   ├── RoleHasPermissionController.php
+│   │   │   │   └── UserHasRoleController.php
+│   │   │   ├── Timesheet/
+│   │   │   │   └── TimesheetManageController.php
+│   │   │   ├── User/
+│   │   │   │   ├── UserManageController.php
+│   │   │   │   └── UserActivityLogController.php
+│   │   │   ├── Mail/
+│   │   │   │   └── EmailTemplateController.php
+│   │   │   ├── ProjectController.php
+│   │   │   ├── HolidayController.php
+│   │   │   ├── AttachmentController.php
+│   │   │   ├── DashboardController.php
+│   │   │   └── ReportController.php
+│   │   └── Middleware/          # Custom middleware
+│   ├── Mail/                    # Mailable classes
+│   │   ├── WelcomeEmail.php
+│   │   ├── OTPEmail.php
+│   │   ├── PasswordResetSuccessEmail.php
+│   │   └── TimesheetSubmittedEmail.php
+│   ├── Models/                  # Eloquent models
+│   │   ├── User.php
+│   │   ├── Business.php
+│   │   ├── Timesheet.php
+│   │   ├── TimesheetEntry.php
+│   │   ├── Project.php
+│   │   ├── Party.php
+│   │   ├── Holiday.php
+│   │   └── ...
+│   ├── Notifications/           # Notification classes
+│   │   ├── TimesheetSubmitted.php
+│   │   └── TimesheetStatusUpdated.php
+│   ├── Providers/               # Service providers
+│   ├── Services/                # Business logic services
+│   │   ├── BusinessRegistrationService.php
+│   │   ├── RoleService.php
+│   │   ├── SlugService.php
+│   │   └── UserAccessService.php
+│   └── Traits/                  # Reusable traits
+│       └── UserActivityTrait.php
+├── bootstrap/
+├── config/                      # Configuration files
 ├── database/
-│   ├── migrations/           # Database Schema
-│   └── seeders/              # Sample Data
+│   ├── factories/               # Model factories
+│   ├── migrations/              # Database migrations
+│   └── seeders/                  # Database seeders
+├── public/                      # Public assets
+├── resources/
+│   ├── css/
+│   ├── js/
+│   └── views/
 ├── routes/
-│   └── api.php              # API Routes
-└── config/                   # Configuration Files
+│   ├── api.php                  # API routes
+│   └── web.php                  # Web routes
+├── storage/                     # Storage directory
+├── tests/                       # Test files
+├── vendor/                      # Composer dependencies
+├── .env.example                 # Environment example
+├── composer.json                # PHP dependencies
+├── package.json                 # Node dependencies
+└── README.md                    # This file
 ```
 
 ---
 
-## 🗄️ Database Structure
+## 📌 API Endpoints
 
-### 1️⃣ **Users Table**
-**File**: `database/migrations/0001_01_01_000000_create_users_table.php`
+### Authentication Endpoints
 
-**What's implemented**:
-- Complete user information storage
-- Name, email, username, password for each user
-- Phone, gender, marital status
-- Image and signature fields
-- Business ID (linked to company)
-- **Status**: `approved`, `rejected`, `pending` (for admin approval)
+#### Public Routes (No Authentication Required)
 
-**Password Reset Table**:
-- OTP-based password reset system
-- OTP verification status tracking
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/register` | Register business owner |
+| POST | `/api/login` | User login |
+| POST | `/api/forget-password` | Request password reset OTP |
+| POST | `/api/otp-varification` | Verify OTP |
+| POST | `/api/reset-password` | Reset password |
 
----
+#### Protected Routes (JWT Token Required)
 
-### 2️⃣ **Businesses Table**
-**File**: `database/migrations/2025_10_15_092829_create_businesses_table.php`
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/logout` | Logout user | All |
+| POST | `/api/refresh` | Refresh JWT token | All |
+| GET | `/api/profile` | Get user profile | All |
+| POST | `/api/profile-edit` | Update profile | All |
+| POST | `/api/change-password` | Change password | All |
 
-**What's implemented**:
-- Storage for various business organizations
-- Company name, email, phone, address
-- Logo upload functionality
-- Unique slug (URL-friendly identifier)
-- Owner ID (company owner)
-- **Status**: `active`, `inactive`, `pending`
+### Business Management (System Admin Only)
 
----
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/business` | Create business |
+| GET | `/api/business` | List all businesses |
+| GET | `/api/business/{id}` | Get business details |
+| POST | `/api/business/{id}` | Update business |
+| DELETE | `/api/business/{id}` | Delete business |
+| PATCH | `/api/business/{id}` | Update business status |
 
-### 3️⃣ **Parties Table** (Stakeholders)
-**File**: `database/migrations/2025_10_25_033914_create_parties_table.php`
+### User Management (System Admin & Business Admin)
 
-**What's implemented**:
-- Unified table for clients, vendors, and employees
-- **Type**: `client`, `vendor`, `employee`
-- Name, email, phone, address
-- Business ID for company relationship
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/user` | Create user |
+| GET | `/api/users` | List users |
+| GET | `/api/user/{id}` | Get user details |
+| POST | `/api/user/{id}` | Update user |
+| DELETE | `/api/user/{id}` | Delete user |
+| PATCH | `/api/user/{id}` | Update user status |
 
----
+### Timesheet Management (All Authenticated Users)
 
-### 4️⃣ **Projects Table**
-**File**: `database/migrations/2025_11_10_235422_create_projects_table.php`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/timesheet` | Create timesheet |
+| GET | `/api/timesheet` | List timesheets |
+| GET | `/api/timesheet/{id}` | Get timesheet details |
+| PUT | `/api/timesheet/{id}` | Update timesheet |
+| DELETE | `/api/timesheet/{id}` | Delete timesheet |
+| PATCH | `/api/timesheet/{id}` | Update timesheet status |
+| GET | `/api/timesheet-defaults` | Get timesheet defaults |
 
-**What's implemented**:
-- Project name and code
-- Client ID (which client the project is for)
-- Business ID (which business owns the project)
-- Foreign key relationships
+### Project Management
 
----
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/projects` | List projects | All |
+| GET | `/api/projects/{id}` | Get project details | All |
+| POST | `/api/projects` | Create project | Admin |
+| POST | `/api/projects/{id}` | Update project | Admin |
+| DELETE | `/api/projects/{id}` | Delete project | Admin |
 
-### 5️⃣ **Timesheets Table**
-**File**: `database/migrations/2025_11_11_000128_create_timesheets_table.php`
+### Party Management (Clients, Vendors, Employees)
 
-**What's implemented**:
-- Weekly/monthly employee timesheets
-- **Relations**:
-  - `user_id`: Which user's timesheet
-  - `client_id`: For which client
-  - `project_id`: Which project
-  - `approved_by`: Who approved it
-- **Fields**:
-  - `start_date`, `end_date`: Timesheet period
-  - `status`: `draft`, `submitted`, `approved`, `rejected`
-  - `total_hours`: Total working hours
-  - `remarks`: Comments
-  - `submitted_at`, `approved_at`: Time tracking
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/party` | Create party |
+| GET | `/api/parties` | List all parties |
+| GET | `/api/clients` | List clients only |
+| GET | `/api/vendors` | List vendors only |
+| GET | `/api/employees` | List employees only |
+| GET | `/api/party/{id}` | Get party details |
+| PUT | `/api/party/{id}` | Update party |
+| DELETE | `/api/party/{id}` | Delete party |
 
----
+### Role & Permission Management
 
-### 6️⃣ **Timesheet Entries Table** (Daily Entries)
-**File**: `database/migrations/2025_11_11_002009_create_timesheet_entries_table.php`
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/role` | Create role | System Admin |
+| GET | `/api/roles` | List roles | All |
+| GET | `/api/role/{id}` | Get role details | All |
+| POST | `/api/role/{id}` | Update role | System Admin |
+| DELETE | `/api/role/{id}` | Delete role | System Admin |
+| POST | `/api/permission` | Create permission | System Admin |
+| GET | `/api/permissions` | List permissions | All |
+| POST | `/api/role-has-permission` | Assign permissions to role | Admin |
+| POST | `/api/user-has-role` | Assign role to user | Admin |
 
-**What's implemented**:
-- Daily work details
-- `entry_date`: Entry date
-- `daily_hours`: Regular working hours
-- `extra_hours`: Overtime hours
-- `vacation_hours`: Vacation hours
-- `note`: Daily notes
-- **Unique Constraint**: Only one entry per date per timesheet
+### Other Endpoints
 
----
-
-### 7️⃣ **Attachments Table**
-**File**: `database/migrations/2025_11_11_002054_create_attachments_table.php`
-
-**What's implemented**:
-- File/document uploads for timesheets
-- Polymorphic relationship (usable with any model)
-
----
-
-### 8️⃣ **Holidays Table**
-**File**: `database/migrations/2025_11_11_002115_create_holidays_table.php`
-
-**What's implemented**:
-- Government/company holiday list
-- Business-specific holidays
-
----
-
-### 9️⃣ **Timesheet Defaults Table**
-**File**: `database/migrations/2025_11_11_002147_create_timesheet_defaults_table.php`
-
-**What's implemented**:
-- Default timesheet settings for each business
-- Daily working hours, weekly off days, etc.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dashboard` | Get dashboard statistics |
+| GET | `/api/reports` | Generate reports (PDF/Excel) |
+| GET | `/api/holidays` | List holidays |
+| POST | `/api/attachments` | Upload attachment |
+| GET | `/api/manage-activity` | Get activity logs |
 
 ---
 
-### 🔐 **Permission Tables** (Spatie Package)
-**File**: `database/migrations/2025_10_19_124233_create_permission_tables.php`
+## 📌 Database Schema
 
-**What's implemented**:
-- `roles`: System Admin, Business Admin, Staff, User
-- `permissions`: Various action permissions
-- `role_has_permissions`: Which role has which permissions
-- `model_has_roles`: User role assignments
+### Core Tables
 
----
+#### Users
+- `id`, `name`, `username`, `email`, `password`
+- `phone`, `gender`, `marital_status`
+- `business_id`, `status` (approved/pending/rejected)
+- `image`, `signature`
+- `created_at`, `updated_at`
 
-### 📧 **Email Templates**
-**File**: `database/migrations/2025_10_26_054339_create_email_templates_table.php`
+#### Businesses
+- `id`, `name`, `slug`, `email`, `phone`, `address`
+- `owner_id`, `logo`, `status` (active/inactive/pending)
+- `created_at`, `updated_at`
 
-**What's implemented**:
-- Custom email template creation
-- Dynamic content support
+#### Timesheets
+- `id`, `business_id`, `user_id`, `client_id`, `project_id`
+- `start_date`, `end_date`, `status` (draft/submitted/approved/rejected)
+- `total_hours`, `remarks`, `attachment_path`
+- `approved_by`, `submitted_at`, `approved_at`
+- `created_at`, `updated_at`
 
----
+#### Timesheet Entries
+- `id`, `business_id`, `timesheet_id`, `entry_date`
+- `daily_hours`, `extra_hours`, `vacation_hours`, `note`
+- `created_at`, `updated_at`
 
-### 📊 **User Logs Table** (User Activity)
-**File**: `database/migrations/2025_10_23_043948_create_user_logs_table.php`
+#### Projects
+- `id`, `business_id`, `client_id`, `name`, `code`
+- `created_at`, `updated_at`
 
-**What's implemented**:
-- Login/logout tracking
-- IP address and User Agent storage
-- Security audit
+#### Parties (Clients/Vendors/Employees)
+- `id`, `business_id`, `type` (client/vendor/employee)
+- `name`, `email`, `phone`, `address`
+- `created_at`, `updated_at`
 
----
+### Relationship Diagram
 
-## 🎭 Models (Data Models)
-
-### 📌 **User Model**
-**File**: `app/Models/User.php`
-
-**What's implemented**:
-- JWT authentication implementation
-- `getJWTIdentifier()` and `getJWTCustomClaims()` methods
-- Spatie `HasRoles` trait added
-- Automatic password hashing
-- Mass assignable fields defined
-- Hidden fields (password, remember_token)
-
----
-
-### 📌 **Other Models**
-All models created with basic structure:
-- `Business.php`
-- `Party.php`
-- `Project.php`
-- `Timesheet.php`
-- `TimesheetEntries.php`
-- `Attachment.php`
-- `Holiday.php`
-- `EmailTemplate.php`
-
----
-
-## 🔐 Authentication System
-
-### **AuthController**
-**File**: `app/Http/Controllers/AuthController.php`
-
-#### ✅ **1. Register (Standard Registration)**
-```php
-POST /api/register
 ```
-**What it does**:
-- Creates new user
-- Automatic username generation
-- Returns JWT token
-- Validation (name, email, password)
-
----
-
-#### ✅ **2. Register Business Owner**
-```php
-POST /api/register
-```
-**What it does**:
-- Creates user and business together
-- Uses `BusinessRegistrationService`
-- Status: `pending` (for admin approval)
-- Database transaction (rollback on error)
-
----
-
-#### ✅ **3. Login**
-```php
-POST /api/login
-```
-**What it does**:
-- Verifies email and password
-- Status check (`approved`, `pending`, `rejected`)
-- Role check (blocks login if no role assigned)
-- Generates JWT token
-- Logs user activity
-- Various error messages:
-  - "Email does not exist"
-  - "Wrong password"
-  - "Account pending approval"
-  - "Account rejected"
-  - "No role assigned"
-
----
-
-#### ✅ **4. Logout**
-```php
-POST /api/logout
-```
-**What it does**:
-- Invalidates token
-- Logs activity
-
----
-
-#### ✅ **5. Refresh Token**
-```php
-POST /api/refresh
-```
-**What it does**:
-- Gets new token using old token
-- Handles token expiry
-
----
-
-#### ✅ **6. Forget Password**
-```php
-POST /api/forget-password
-```
-**What it does**:
-- Verifies email
-- Generates 6-digit OTP
-- Saves OTP in database (5 minutes validity)
-- Sends email
-- Error handling (email not found, mail send failure)
-
----
-
-#### ✅ **7. OTP Verification**
-```php
-POST /api/otp-varification
-```
-**What it does**:
-- Matches email and OTP
-- Checks OTP expiry
-- Sets verification flag
-- Error messages:
-  - "Invalid email"
-  - "Invalid OTP"
-  - "OTP expired"
-
----
-
-#### ✅ **8. Reset Password**
-```php
-POST /api/reset-password
-```
-**What it does**:
-- Checks if OTP is verified
-- Sets new password
-- Validates password confirmation
-- Deletes password reset record
-- Logs activity
-
----
-
-## 🏢 Business Management
-
-### **BusinessController**
-**File**: `app/Http/Controllers/Company/BusinessController.php`
-
-**Routes** (System Admin only):
-- `POST /api/business` - Create new business
-- `GET /api/business` - View all businesses
-- `GET /api/business/{id}` - View business details
-- `POST /api/business/{id}` - Update
-- `DELETE /api/business/{id}` - Delete
-- `PATCH /api/business/{id}` - Update status
-
----
-
-### **BusinessRegistrationService**
-**File**: `app/Services/BusinessRegistrationService.php`
-
-**What's implemented**:
-
-#### 🔹 **createUser() - Private Method**
-- Common user creation logic
-- Image and signature upload
-- Auto-generate username
-- Set status (admin created = approved, self = pending)
-
-#### 🔹 **createBusiness() - Private Method**
-- Common business creation logic
-- Logo upload
-- Generate unique slug
-- Link owner ID
-
-#### 🔹 **registerOwner() - Public Method**
-- For self-registration
-- Uses database transaction
-- Creates user and business together
-- Status: `pending`
-
-#### 🔹 **createOwnerByAdmin() - Public Method**
-- Created by admin
-- Auto-approved status
-- Role assignment (Business Admin)
-- Transaction rollback on error
-
-#### 🔹 **uploadFile() - Helper Method**
-- Uploads files
-- Generates unique filename
-- Returns storage path
-
----
-
-## 👥 User Management
-
-### **UserManageController**
-**File**: `app/Http/Controllers/User/UserManageController.php`
-
-**Routes** (System Admin & Business Admin):
-- `POST /api/user` - Create new user
-- `GET /api/users` - View all users
-- `GET /api/user/{id}` - View user details
-- `POST /api/user/{id}` - Update
-- `DELETE /api/user/{id}` - Delete
-- `PATCH /api/user/{id}` - Update status
-
----
-
-## 🎭 Role & Permission Management
-
-### **RoleController**
-**File**: `app/Http/Controllers/RoleAndPermission/RoleController.php`
-
-**Routes**:
-- `POST /api/role` - Create new role
-- `GET /api/roles` - View all roles
-- `GET /api/role/{id}` - View role details
-- `POST /api/role/{id}` - Update
-- `DELETE /api/role/{id}` - Delete
-
----
-
-### **PermissionController**
-**File**: `app/Http/Controllers/RoleAndPermission/PermissionController.php`
-
-**Routes** (System Admin only):
-- `POST /api/permission` - Create new permission
-- `GET /api/permissions` - View all permissions
-- `GET /api/permission/{id}` - View details
-- `POST /api/permission/{id}` - Update
-- `DELETE /api/permission/{id}` - Delete
-
----
-
-### **RoleHasPermissionController**
-**File**: `app/Http/Controllers/RoleAndPermission/RoleHasPermissionController.php`
-
-**Route**:
-- `POST /api/role-has-permission` - Assign permissions to role
-
----
-
-### **UserHasRoleController**
-**File**: `app/Http/Controllers/RoleAndPermission/UserHasRoleController.php`
-
-**Route**:
-- `POST /api/user-has-role` - Assign role to user
-
----
-
-### **RoleService**
-**File**: `app/Services/RoleService.php`
-
-**What's implemented**:
-
-#### 🔹 **assignRole() Method**
-- Authorization check
-- **System Admin**: Can assign all roles
-- **Business Admin**: Can only assign User, Staff, Business Admin
-- Duplicate role check
-- Activity logging
-
-#### 🔹 **syncUserRole() Method**
-- Updates user's role
-- Removes old role and sets new role
-- Authorization check
-- Atomic operation (all or nothing)
-
----
-
-## 🏢 Party Management (Client/Vendor/Employee)
-
-### **PartyController**
-**File**: `app/Http/Controllers/Party/PartyController.php`
-
-**Routes**:
-- `POST /api/party` - Create new party
-- `GET /api/parties` - View all parties
-- `GET /api/clients` - View clients only
-- `GET /api/vendors` - View vendors only
-- `GET /api/employees` - View employees only
-- `GET /api/party/{id}` - View details
-- `PUT /api/party/{id}` - Update
-- `DELETE /api/party/{id}` - Delete
-
----
-
-## 📧 Email Template Management
-
-### **EmailTemplateController**
-**File**: `app/Http/Controllers/Mail/EmailTemplateController.php`
-
-**Routes**:
-- `POST /api/email-template` - Create new template
-- `GET /api/email-template` - View all templates
-- `GET /api/email-template/{id}` - View details
-- `PUT /api/email-template/{id}` - Update
-- `DELETE /api/email-template/{id}` - Delete
-
----
-
-## 👤 Profile Management
-
-### **ProfileController**
-**File**: `app/Http/Controllers/Profile/ProfileController.php`
-
-**Routes** (All authenticated users):
-- `GET /api/profile` - View own profile
-- `POST /api/profile-edit` - Update profile
-- `POST /api/change-password` - Change password
-
----
-
-## 📊 User Activity Logs
-
-### **UserActivityLogController**
-**File**: `app/Http/Controllers/User/UserActivityLogController.php`
-
-**Route**:
-- `GET /api/manage-activity` - View all user activities
-
-### **UserActivityTrait**
-**File**: `app/Traits/UserActivityTrait.php`
-
-**What's implemented**:
-- `logActivity()` method
-- Logs login, logout, password reset, etc.
-- Stores IP address and user agent
-
----
-
-## 🛠️ Helper Functions
-
-### **helpers.php**
-**File**: `app/Helpers/helpers.php`
-
-#### 🔹 **generateUniqueUsername()**
-**What it does**:
-- Creates username from name
-- Removes lowercase and special characters
-- Checks uniqueness in database
-- Adds counter if duplicate
-- Example: "John Doe" → "johndoe", "johndoe1", "johndoe2"
-
-#### 🔹 **authenticated()**
-**What it does**:
-- Logs activity during login
-- Stores IP and user agent
-
----
-
-## 🛠️ Other Services
-
-### **SlugService**
-**File**: `app/Services/SlugService.php`
-
-**What's implemented**:
-- Creates URL-friendly slug from business name
-- Ensures unique slug
-- Example: "ABC Company" → "abc-company", "abc-company-1"
-
----
-
-### **UserAccessService**
-**File**: `app/Services/UserAccessService.php`
-
-**What's implemented**:
-- User access control logic
-- Business-specific data filtering
-- Authorization helpers
-
----
-
-## 🛣️ API Routes
-
-### **api.php**
-**File**: `routes/api.php`
-
-### 🔓 **Public Routes** (No authentication required)
-```php
-POST /api/register           # Business owner registration
-POST /api/login              # Login
-POST /api/forget-password    # Forget password
-POST /api/otp-varification   # OTP verify
-POST /api/reset-password     # Reset password
+Users ──┬──> Businesses (owner)
+        └──> Timesheets
+              └──> TimesheetEntries
+
+Businesses ──┬──> Users
+             ├──> Projects
+             ├──> Parties
+             └──> Holidays
+
+Projects ──> Parties (client)
+Timesheets ──> Projects
+Timesheets ──> Parties (client)
 ```
 
 ---
 
-### 🔐 **Protected Routes** (JWT token required)
+## 📌 Authentication & Authorization
 
-#### **All Authenticated Users**:
-```php
-POST /api/logout             # Logout
-POST /api/refresh            # Refresh token
-GET  /api/profile            # View profile
-POST /api/profile-edit       # Edit profile
-POST /api/change-password    # Change password
-```
+### Authentication Flow
 
----
+1. **Registration:** Business owner registers → Status: `pending`
+2. **Admin Approval:** System Admin approves → Status: `approved`
+3. **Login:** User logs in with email/password → Receives JWT token
+4. **Token Usage:** Include token in `Authorization: Bearer {token}` header
 
-#### **System Admin Only**:
-```php
-# Business Management
-POST   /api/business
-GET    /api/business
-GET    /api/business/{id}
-POST   /api/business/{id}
-DELETE /api/business/{id}
-PATCH  /api/business/{id}
+### JWT Token Structure
 
-# Permission Management
-POST   /api/permission
-GET    /api/permissions
-GET    /api/permission/{id}
-POST   /api/permission/{id}
-DELETE /api/permission/{id}
-```
-
----
-
-#### **System Admin & Business Admin**:
-```php
-# Role Management
-POST   /api/role
-GET    /api/roles
-GET    /api/role/{id}
-POST   /api/role/{id}
-DELETE /api/role/{id}
-
-# User Management
-POST   /api/user
-GET    /api/users
-GET    /api/user/{id}
-POST   /api/user/{id}
-DELETE /api/user/{id}
-PATCH  /api/user/{id}
-
-# Party Management
-POST   /api/party
-GET    /api/parties
-GET    /api/clients
-GET    /api/vendors
-GET    /api/employees
-GET    /api/party/{id}
-PUT    /api/party/{id}
-DELETE /api/party/{id}
-
-# Email Template
-POST   /api/email-template
-GET    /api/email-template
-GET    /api/email-template/{id}
-PUT    /api/email-template/{id}
-DELETE /api/email-template/{id}
-
-# Timesheet Management
-POST   /api/timesheet
-GET    /api/timesheet
-GET    /api/timesheet/{id}
-PUT    /api/timesheet/{id}
-DELETE /api/timesheet/{id}
-PATCH  /api/timesheet/{id}
-
-# Activity Logs
-GET    /api/manage-activity
-
-# Role & Permission Assignment
-POST   /api/role-has-permission
-POST   /api/user-has-role
-```
-
----
-
-## ⏰ Timesheet Management API
-
-### **TimesheetManageController**
-**File**: `app/Http/Controllers/Timesheet/TimesheetManageController.php`
-
-**Routes** (System Admin & Business Admin):
-
----
-
-### **1. Create Timesheet**
-```http
-POST /api/timesheet
-```
-
-**Headers:**
-```
-Authorization: Bearer {token}
-Content-Type: application/json
-```
-
-**Request Body:**
 ```json
 {
-  "user_id": 5,
-  "client_id": 2,
-  "project_id": 3,
-  "start_date": "2025-11-18",
-  "end_date": "2025-11-24",
-  "status": "draft",
-  "remarks": "Weekly timesheet for Project X",
-  "entries": [
-    {
-      "entry_date": "2025-11-18",
-      "daily_hours": 8,
-      "extra_hours": 2,
-      "vacation_hours": 0,
-      "note": "Worked on feature development"
-    },
-    {
-      "entry_date": "2025-11-19",
-      "daily_hours": 8,
-      "extra_hours": 0,
-      "vacation_hours": 0,
-      "note": "Bug fixes and testing"
-    }
-  ]
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "success": true,
-  "message": "Timesheet created successfully",
-  "data": {
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "user": {
     "id": 1,
-    "business_id": 1,
-    "user_id": 5,
-    "client_id": 2,
-    "project_id": 3,
-    "start_date": "2025-11-18",
-    "end_date": "2025-11-24",
-    "status": "draft",
-    "total_hours": 18.00,
-    "remarks": "Weekly timesheet for Project X",
-    "entries": [
-      {
-        "id": 1,
-        "entry_date": "2025-11-18",
-        "daily_hours": 8.00,
-        "extra_hours": 2.00,
-        "vacation_hours": 0.00,
-        "note": "Worked on feature development"
-      },
-      {
-        "id": 2,
-        "entry_date": "2025-11-19",
-        "daily_hours": 8.00,
-        "extra_hours": 0.00,
-        "vacation_hours": 0.00,
-        "note": "Bug fixes and testing"
-      }
-    ]
-  }
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "role": "Business Admin"
 }
 ```
 
-**Validation Rules:**
-- `user_id`: Required, must exist in users table
-- `client_id`: Optional, must exist in parties table
-- `project_id`: Optional, must exist in projects table
-- `start_date`: Required, valid date
-- `end_date`: Required, must be >= start_date
-- `status`: Optional, one of: draft, submitted, approved, rejected
-- `entries.*.entry_date`: Required, must be between start_date and end_date
-- `entries.*.daily_hours`: Required, 0-24
-- `entries.*.extra_hours`: Optional, 0-24
-- `entries.*.vacation_hours`: Optional, 0-24
+### Roles & Permissions
+
+#### System Admin
+- Full access to all businesses
+- Can create/manage businesses
+- Can assign any role
+- Can manage permissions
+
+#### Business Admin
+- Full access to own business data
+- Can create/manage users in own business
+- Can assign roles: User, Staff, Business Admin
+- Can approve/reject timesheets
+
+#### Staff
+- Can create/view own timesheets
+- Can view projects and clients
+- Cannot approve timesheets
+
+#### User
+- Can create/view own timesheets
+- Can view own profile
+- Cannot approve timesheets
+
+### Permission System
+
+Uses **Spatie Laravel Permission** package:
+- Roles: System Admin, Business Admin, Staff, User
+- Permissions: Granular permissions (e.g., `create-timesheet`, `approve-timesheet`)
+- Role-Permission mapping: Flexible assignment
 
 ---
 
-### **2. List Timesheets**
-```http
-GET /api/timesheet
+## 📌 Developer Guide
+
+### Code Style
+
+The project uses **Laravel Pint** for code formatting:
+
+```bash
+# Format code
+./vendor/bin/pint
+
+# Check code style
+./vendor/bin/pint --test
 ```
 
-**Query Parameters:**
-- `status` - Filter by status (draft, submitted, approved, rejected)
-- `user_id` - Filter by user
-- `client_id` - Filter by client
-- `project_id` - Filter by project
-- `from_date` - Filter start date (start_date >= from_date)
-- `to_date` - Filter end date (end_date <= to_date)
+### Adding New Features
 
-**Example:**
-```http
-GET /api/timesheet?status=submitted&user_id=5&from_date=2025-11-01
+1. **Create Migration**
+   ```bash
+   php artisan make:migration create_example_table
+   ```
+
+2. **Create Model**
+   ```bash
+   php artisan make:model Example
+   ```
+
+3. **Create Controller**
+   ```bash
+   php artisan make:controller ExampleController
+   ```
+
+4. **Create Service (if needed)**
+   ```bash
+   # Manual creation in app/Services/
+   ```
+
+5. **Add Routes**
+   ```php
+   // routes/api.php
+   Route::get('/examples', [ExampleController::class, 'index']);
+   ```
+
+### Database Migrations
+
+```bash
+# Create migration
+php artisan make:migration create_example_table
+
+# Run migrations
+php artisan migrate
+
+# Rollback last migration
+php artisan migrate:rollback
+
+# Refresh migrations
+php artisan migrate:fresh
+
+# Seed database
+php artisan db:seed
 ```
 
-**Response (200 OK):**
-```json
+### Creating Services
+
+Services should contain business logic:
+
+```php
+// app/Services/ExampleService.php
+namespace App\Services;
+
+class ExampleService
 {
-  "success": true,
-  "data": [
+    public function doSomething(): void
     {
-      "id": 1,
-      "business_id": 1,
-      "user_id": 5,
-      "client_id": 2,
-      "project_id": 3,
-      "start_date": "2025-11-18",
-      "end_date": "2025-11-24",
-      "status": "submitted",
-      "total_hours": 40.00,
-      "submitted_at": "2025-11-24T10:30:00Z",
-      "user": {
-        "id": 5,
-        "name": "John Doe",
-        "email": "john@example.com"
-      },
-      "client": {
-        "id": 2,
-        "name": "ABC Corporation"
-      },
-      "project": {
-        "id": 3,
-        "name": "Website Redesign"
-      },
-      "entries": [...]
+        // Business logic here
     }
-  ]
 }
 ```
 
-**Features:**
-- ✅ Business-level filtering (only see your business data)
-- ✅ Multiple filter options
-- ✅ Eager loads relationships (user, client, project, approver, entries)
-- ✅ Latest first ordering
+### Using Traits
 
----
-
-### **3. View Timesheet Details**
-```http
-GET /api/timesheet/{id}
-```
-
-**Response (200 OK):**
-```json
+```php
+// app/Traits/UserActivityTrait.php
+trait UserActivityTrait
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "business_id": 1,
-    "user_id": 5,
-    "client_id": 2,
-    "project_id": 3,
-    "approved_by": null,
-    "start_date": "2025-11-18",
-    "end_date": "2025-11-24",
-    "status": "draft",
-    "total_hours": 40.00,
-    "remarks": "Weekly timesheet",
-    "submitted_at": null,
-    "approved_at": null,
-    "user": {...},
-    "client": {...},
-    "project": {...},
-    "approver": null,
-    "entries": [
-      {
-        "id": 1,
-        "entry_date": "2025-11-18",
-        "daily_hours": 8.00,
-        "extra_hours": 0.00,
-        "vacation_hours": 0.00,
-        "note": "Regular work"
-      }
-    ]
-  }
-}
-```
-
-**Error (403 Forbidden):**
-```json
-{
-  "success": false,
-  "message": "You are not allowed to view this timesheet."
-}
-```
-
----
-
-### **4. Update Timesheet**
-```http
-PUT /api/timesheet/{id}
-```
-
-**Request Body:**
-```json
-{
-  "client_id": 2,
-  "project_id": 3,
-  "start_date": "2025-11-18",
-  "end_date": "2025-11-24",
-  "remarks": "Updated remarks",
-  "entries": [
+    public function logActivity(string $action): void
     {
-      "entry_date": "2025-11-18",
-      "daily_hours": 8,
-      "extra_hours": 1,
-      "vacation_hours": 0,
-      "note": "Updated entry"
+        // Logging logic
     }
-  ]
 }
-```
 
-**Response (200 OK):**
-```json
+// In Controller
+use UserActivityTrait;
+
+public function store(Request $request)
 {
-  "success": true,
-  "message": "Timesheet updated successfully",
-  "data": {...}
+    $this->logActivity('create_resource');
 }
 ```
 
-**Restrictions:**
-- ❌ Only draft timesheets can be edited
-- ❌ Cannot edit submitted/approved/rejected timesheets
+### Error Handling
 
-**Error (400 Bad Request):**
-```json
+```php
+try {
+    // Operation
+} catch (\Exception $e) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Operation failed',
+        'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+    ], 500);
+}
+```
+
+### Validation
+
+```php
+$validator = Validator::make($request->all(), [
+    'name' => 'required|string|max:100',
+    'email' => 'required|email|unique:users,email',
+]);
+
+if ($validator->fails()) {
+    return response()->json([
+        'success' => false,
+        'errors' => $validator->errors()
+    ], 422);
+}
+```
+
+---
+
+## 📌 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+php artisan test
+
+# Run specific test
+php artisan test --filter ExampleTest
+
+# Run with coverage
+php artisan test --coverage
+```
+
+### Writing Tests
+
+```php
+// tests/Feature/ExampleTest.php
+namespace Tests\Feature;
+
+use Tests\TestCase;
+
+class ExampleTest extends TestCase
 {
-  "success": false,
-  "message": "Only draft timesheets can be edited."
+    public function test_example(): void
+    {
+        $response = $this->get('/api/example');
+        $response->assertStatus(200);
+    }
 }
 ```
 
 ---
 
-### **5. Delete Timesheet**
-```http
-DELETE /api/timesheet/{id}
-```
+## 📌 Deployment
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Timesheet deleted successfully"
-}
-```
+### Production Checklist
 
-**Restrictions:**
-- ❌ Only draft timesheets can be deleted
-- ✅ Entries are cascade deleted automatically
+- [ ] Set `APP_ENV=production`
+- [ ] Set `APP_DEBUG=false`
+- [ ] Generate application key: `php artisan key:generate`
+- [ ] Generate JWT secret: `php artisan jwt:secret`
+- [ ] Run migrations: `php artisan migrate --force`
+- [ ] Optimize: `php artisan config:cache`, `php artisan route:cache`
+- [ ] Set up queue worker: `php artisan queue:work`
+- [ ] Configure web server (Nginx/Apache)
+- [ ] Set up SSL certificate
+- [ ] Configure file storage (S3 recommended)
+- [ ] Set up monitoring and logging
 
----
+### Environment Variables for Production
 
-### **6. Update Timesheet Status**
-```http
-PATCH /api/timesheet/{id}
-```
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://yourdomain.com
 
-**Request Body:**
-```json
-{
-  "status": "submitted"
-}
-```
+DB_CONNECTION=mysql
+DB_HOST=your-db-host
+DB_DATABASE=your-db-name
+DB_USERNAME=your-db-user
+DB_PASSWORD=your-db-password
 
-**Valid Status Values:**
-- `draft` - Initial state, can be edited
-- `submitted` - Submitted for approval
-- `approved` - Approved by manager
-- `rejected` - Rejected by manager
+JWT_SECRET=your-production-jwt-secret
 
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Timesheet submitted successfully",
-  "data": {
-    "id": 1,
-    "status": "submitted",
-    "submitted_at": "2025-11-24T10:30:00Z"
-  }
-}
-```
-
-**Status Workflow:**
-```
-draft → submitted → approved/rejected
-```
-
-**Auto-set Fields:**
-- `submitted` status → Sets `submitted_at` timestamp
-- `approved` status → Sets `approved_by` and `approved_at`
-
----
-
-### **Access Control:**
-
-| Role | Create | View Own | View All | Update | Delete | Approve |
-|------|--------|----------|----------|--------|--------|---------|
-| **System Admin** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Business Admin** | ✅ | ✅ | ✅ (Business) | ✅ | ✅ | ✅ |
-| **Staff** | ✅ | ✅ | ❌ | ✅ (Own) | ✅ (Own) | ❌ |
-| **User** | ✅ | ✅ | ❌ | ✅ (Own) | ✅ (Own) | ❌ |
-
----
-
-### **Business Logic:**
-
-1. **Auto-calculate Total Hours:**
-   - Automatically sums `daily_hours + extra_hours` from all entries
-   - Updates `total_hours` field
-
-2. **Business Isolation:**
-   - Users can only see timesheets from their business
-   - System Admin can see all timesheets
-
-3. **Status Protection:**
-   - Draft timesheets: Can edit and delete
-   - Submitted/Approved/Rejected: Read-only
-
-4. **Entry Validation:**
-   - Entry dates must be within timesheet period
-   - Hours must be 0-24
-   - Unique entry per date per timesheet
-
----
-
-### **Example Workflow:**
-
-```javascript
-// 1. Create draft timesheet
-POST /api/timesheet
-{
-  "user_id": 5,
-  "start_date": "2025-11-18",
-  "end_date": "2025-11-24",
-  "status": "draft",
-  "entries": [...]
-}
-
-// 2. Update if needed
-PUT /api/timesheet/1
-{
-  "entries": [...]  // Updated entries
-}
-
-// 3. Submit for approval
-PATCH /api/timesheet/1
-{
-  "status": "submitted"
-}
-
-// 4. Manager approves
-PATCH /api/timesheet/1
-{
-  "status": "approved"
-}
+MAIL_MAILER=smtp
+MAIL_HOST=your-smtp-host
+MAIL_PORT=587
+MAIL_USERNAME=your-email
+MAIL_PASSWORD=your-password
+MAIL_ENCRYPTION=tls
 ```
 
 ---
 
-# Activity Logs
-GET    /api/manage-activity
+## 📌 Contributing
 
-# Role & Permission Assignment
-POST   /api/role-has-permission
-POST   /api/user-has-role
-```
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
----
+### Coding Standards
 
-## 🔒 Middleware & Security
-
-### **Authentication Middleware**:
-- `auth:api` - Verifies JWT token
-- Rejects invalid/expired tokens
-
-### **Role Middleware**:
-- `role:System Admin` - Only System Admin can access
-- `role:Business Admin` - Only Business Admin can access
-- `role:System Admin|Business Admin` - Both can access
-- `role:User` - For User role
-- `role:Staff` - For Staff role
+- Follow PSR-12 coding standards
+- Use Laravel Pint for formatting
+- Write tests for new features
+- Update documentation
+- Follow semantic versioning
 
 ---
 
-## 📦 Dependencies (composer.json)
+## 📌 License
 
-### **Main Packages**:
-```json
-{
-  "php": "^8.2",
-  "laravel/framework": "^11.31",
-  "tymon/jwt-auth": "^2.2",              // JWT Authentication
-  "spatie/laravel-permission": "^6.21"   // Role & Permission
-}
-```
-
-### **Dev Packages**:
-- `laravel/pint` - Code formatting
-- `phpunit/phpunit` - Testing
-- `laravel/sail` - Docker environment
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## ⚙️ Configuration Files
+## 📌 Support
 
-### **.env.example**
-**What's included**:
-- Database configuration (SQLite default)
-- Mail configuration
-- JWT secret (needs to be generated)
-- App settings
+For support, email support@example.com or create an issue in the repository.
 
 ---
 
-## 🎯 Key Features Summary
+## 📌 Acknowledgments
 
-### ✅ **Authentication & Authorization**
-- JWT-based authentication
-- OTP-based password reset
-- Role-based access control (RBAC)
-- 4 roles: System Admin, Business Admin, Staff, User
-- Permission management
-
-### ✅ **Multi-tenancy Support**
-- Multiple businesses can use the system
-- Business-specific data isolation
-- Owner-based business management
-
-### ✅ **User Management**
-- User registration with approval workflow
-- Profile management
-- Activity logging
-- Status management (approved/pending/rejected)
-
-### ✅ **Timesheet Management**
-- Weekly/monthly timesheets
-- Daily time entries
-- Project and client tracking
-- Approval workflow
-- Attachment support
-
-### ✅ **Party Management**
-- Unified system for clients, vendors, employees
-- Business-specific parties
-- Type-based filtering
-
-### ✅ **Email System**
-- Custom email templates
-- Template management
-- Dynamic content support
-
-### ✅ **Security Features**
-- Password hashing
-- JWT token expiry
-- Activity logging (IP, User Agent)
-- Role-based authorization
-- OTP expiry (5 minutes)
+- Laravel Framework
+- Spatie Laravel Permission
+- Tymon JWT Auth
+- All contributors
 
 ---
 
-## 🚀 Next Steps (To Be Implemented)
-
-### 📝 **Controllers to Build**:
-1. **TimesheetController** - Timesheet CRUD operations
-2. **ProjectController** - Project management
-3. **HolidayController** - Holiday management
-4. **AttachmentController** - File upload/download
-5. **ReportController** - Timesheet reports
-
-### 🔧 **Features to Add**:
-1. **Notifications** - Email/SMS notifications
-2. **Reports** - PDF/Excel export
-3. **Dashboard** - Analytics & statistics
-4. **API Documentation** - Swagger/Postman collection
-5. **Testing** - Unit & Feature tests
-6. **File Storage** - AWS S3 integration
-7. **Caching** - Redis caching
-8. **Queue Jobs** - Background processing
-
----
-
-## 📊 Database Relationships
-
-```mermaid
-erDiagram
-    USERS ||--o{ BUSINESSES : owns
-    USERS }o--|| BUSINESSES : "belongs to"
-    USERS ||--o{ TIMESHEETS : creates
-    USERS ||--o{ USER_LOGS : has
-    
-    BUSINESSES ||--o{ PARTIES : has
-    BUSINESSES ||--o{ PROJECTS : has
-    BUSINESSES ||--o{ TIMESHEET_ENTRIES : has
-    
-    PARTIES ||--o{ PROJECTS : "client of"
-    PARTIES ||--o{ TIMESHEETS : "client of"
-    
-    PROJECTS ||--o{ TIMESHEETS : has
-    
-    TIMESHEETS ||--o{ TIMESHEET_ENTRIES : contains
-    TIMESHEETS ||--o{ ATTACHMENTS : has
-    
-    USERS ||--o{ MODEL_HAS_ROLES : has
-    ROLES ||--o{ MODEL_HAS_ROLES : assigned_to
-    ROLES ||--o{ ROLE_HAS_PERMISSIONS : has
-    PERMISSIONS ||--o{ ROLE_HAS_PERMISSIONS : belongs_to
-```
-
----
-
-## 🎓 Code Quality & Best Practices
-
-### ✅ **What's Been Done Well**:
-1. **Service Layer Pattern** - Business logic separated from controllers
-2. **Repository Pattern** - Organized database queries
-3. **Trait Usage** - Code reusability (UserActivityTrait)
-4. **Helper Functions** - Common utilities
-5. **Database Transactions** - Data consistency
-6. **Error Handling** - Try-catch blocks
-7. **Validation** - Input validation
-8. **Foreign Keys** - Data integrity
-9. **Indexes** - Query optimization
-10. **Middleware** - Route protection
-
-### 📝 **Documentation**:
-- PHPDoc comments
-- Type hints
-- Clear method names
-- Organized file structure
-
----
-
-## 🏁 Conclusion
-
-This project implements a **complete Timesheet Management System** backend with:
-
-✅ **Authentication System** - JWT-based login/register  
-✅ **Authorization System** - Role & Permission management  
-✅ **Multi-tenancy** - Multiple businesses support  
-✅ **User Management** - Complete user lifecycle  
-✅ **Database Schema** - Well-structured tables  
-✅ **API Routes** - RESTful API endpoints  
-✅ **Security** - Activity logging, OTP verification  
-✅ **Business Logic** - Service layer implementation  
-
-**Total Files Reviewed**: 50+ files  
-**Database Tables**: 16 tables  
-**API Endpoints**: 40+ endpoints  
-**Roles**: 4 (System Admin, Business Admin, Staff, User)
-
-This system is now **near production-ready**. Just add timesheet CRUD operations and some additional features to complete it! 🎉
+**Built with ❤️ using Laravel**

@@ -13,11 +13,6 @@ use App\Http\Controllers\RoleAndPermission\UserHasRoleController;
 use App\Http\Controllers\Timesheet\TimesheetManageController;
 use App\Http\Controllers\User\UserActivityLogController;
 use App\Http\Controllers\User\UserManageController;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\HolidayController;
-use App\Http\Controllers\AttachmentController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ReportController;
 
 //////////////////// Auth Related Route /////////////////
 Route::controller(AuthController::class)->group(function () {
@@ -54,24 +49,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/timesheet-defaults', 'getDefaults');
     });
 
-    //**** Attachment Related Route ****//
-    Route::controller(AttachmentController::class)->group(function () {
-        Route::post('/attachments', 'store');
-        Route::get('/attachments/{id}', 'download');
-        Route::delete('/attachments/{id}', 'delete');
-    });
-
-    //**** Dashboard Related Route ****//
-    Route::get('/dashboard', [DashboardController::class, 'stats']);
-
-    //**** Project Related Route (View) ****//
-    Route::get('/projects', [ProjectController::class, 'view']);
-    Route::get('/projects/{id}', [ProjectController::class, 'viewDetails']);
-
-    //**** Holiday Related Route (View) ****//
-    Route::get('/holidays', [HolidayController::class, 'view']);
-    Route::get('/holidays/{id}', [HolidayController::class, 'viewDetails']);
-
 
     //**** Party Related Route ****//
     Route::controller(PartyController::class)->group(function () {
@@ -98,24 +75,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/roles', 'view');
         Route::get('/role/{id}', 'viewDetails');
     });
-
-
-     //**** Project Related Route (Manage) ****//
-    Route::controller(ProjectController::class)->group(function () {
-        Route::post('/projects', 'store');
-        Route::post('/projects/{id}', 'update');
-        Route::delete('/projects/{id}', 'delete');
-    });
-
-    //**** Holiday Related Route (Manage) ****//
-    Route::controller(HolidayController::class)->group(function () {
-        Route::post('/holidays', 'store');
-        Route::post('/holidays/{id}', 'update');
-        Route::delete('/holidays/{id}', 'delete');
-    });
-
-    //**** Report Related Route ****//
-    Route::get('/reports', [ReportController::class, 'generate']);
 });
 
 
@@ -145,8 +104,6 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
         Route::post('/permission', 'store');
-        // Route::get('/permissions', 'view');
-        // Route::get('/permission/{id}', 'viewDetails');
         Route::post('/permission/{id}', 'update');
         Route::delete('/permission/{id}', 'delete');
     });
@@ -192,11 +149,6 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
     //**** Party Related Route ****//
     Route::controller(PartyController::class)->group(function () {
         Route::post('/party', 'store');
-        // Route::get('/parties', 'view');
-        // Route::get('/clients', 'getClient');
-        // Route::get('/vendors', 'getVendor');
-        // Route::get('/employees', 'getEmployee');
-        // Route::get('/party/{id}', 'viewDetails');
         Route::put('/party/{id}', 'update');
         Route::delete('/party/{id}', 'delete');
     });
@@ -204,11 +156,7 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
     //**** Email Template Related Route ****//
     Route::controller(EmailTemplateController::class)->group(function () {
         Route::post('/email-template', 'store');
-        // Route::get('/email-template', 'view');
-        // Route::get('/email-template/{id}', 'viewDetails');
         Route::put('/email-template/{id}', 'update');
         Route::delete('/email-template/{id}', 'delete');
     });
-
-   
 });
