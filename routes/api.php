@@ -14,6 +14,13 @@ use App\Http\Controllers\Timesheet\TimesheetManageController;
 use App\Http\Controllers\User\UserActivityLogController;
 use App\Http\Controllers\User\UserManageController;
 
+
+
+Route::get('/', function () {
+    return response()->json([
+        'message' => 'Timesheet is running'
+    ]);
+});
 //////////////////// Auth Related Route /////////////////
 Route::controller(AuthController::class)->group(function () {
     Route::post('/register', 'registerBusinessOwner');
