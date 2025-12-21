@@ -92,7 +92,30 @@ Route::middleware(['auth:api', 'role:User'])->group(function () {});
 Route::middleware(['auth:api', 'role:Staff'])->group(function () {});
 
 //////////////////// Private Route For Business Admin Role  /////////////////
-Route::middleware(['auth:api', 'role:Business Admin'])->group(function () {});
+Route::middleware(['auth:api', 'role:Business Admin'])->group(function () {
+
+    //**** RoleHasPermission Related Routes ****//
+    Route::controller(RoleHasPermissionController::class)->group(function () {
+        Route::post('/role-has-permission', 'store');
+    });
+
+    //**** UserHasRole Related Routes ****//
+    Route::controller(UserHasRoleController::class)->group(function () {
+        Route::post('/user-has-role', 'store');
+    });
+
+    //**** Activity Related Routes ****//
+    Route::controller(UserActivityLogController::class)->group(function () {
+        Route::get('/manage-activity', 'view');
+    });
+
+    //**** Email Template Related Route ****//
+    Route::controller(EmailTemplateController::class)->group(function () {
+        Route::post('/email-template', 'store');
+        Route::put('/email-template/{id}', 'update');
+        Route::delete('/email-template/{id}', 'delete');
+    });
+});
 
 //////////////////// Private Route For System Admin Role  /////////////////
 Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
@@ -118,32 +141,25 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
     //**** Role Related Route ****//
     Route::controller(RoleController::class)->group(function () {
         Route::post('/role', 'store');
-        // Route::get('/roles', 'view');
-        // Route::get('/role/{id}', 'viewDetails');
         Route::post('/role/{id}', 'update');
         Route::delete('/role/{id}', 'delete');
     });
 });
 
 //////////////////// Role & Permission Route Only for Sytem Admin and Busines Admin /////////////////
-Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(function () {
-
-    //**** RoleHasPermission Related Routes ****//
-    Route::controller(RoleHasPermissionController::class)->group(function () {
-        Route::post('/role-has-permission', 'store');
-    });
-
-    //**** UserHasRole Related Routes ****//
-    Route::controller(UserHasRoleController::class)->group(function () {
-        Route::post('/user-has-role', 'store');
-    });
-
-    //**** Activity Related Routes ****//
-    Route::controller(UserActivityLogController::class)->group(function () {
-        Route::get('/manage-activity', 'view');
-    });
+Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () {
 
     //**** User Manage Related Route ****//
+    Route::controller(UserManageController::class)->group(function () {
+        Route::post('/user', 'store');
+        Route::get('/users', 'view');
+        Route::get('/user/{id}', 'viewDetails');
+        Route::post('/user/{id}', 'update');
+        Route::delete('/user/{id}', 'delete');
+        Route::patch('/user/{id}', 'statusUpdate');
+    });
+
+    //**** Internal User Related Route ****//
     Route::controller(UserManageController::class)->group(function () {
         Route::post('/user', 'store');
         Route::get('/users', 'view');
@@ -158,12 +174,5 @@ Route::middleware(['auth:api', 'role:System Admin|Business Admin'])->group(funct
         Route::post('/party', 'store');
         Route::put('/party/{id}', 'update');
         Route::delete('/party/{id}', 'delete');
-    });
-
-    //**** Email Template Related Route ****//
-    Route::controller(EmailTemplateController::class)->group(function () {
-        Route::post('/email-template', 'store');
-        Route::put('/email-template/{id}', 'update');
-        Route::delete('/email-template/{id}', 'delete');
     });
 });
