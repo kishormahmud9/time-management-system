@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Company\BusinessController;
+use App\Http\Controllers\User\InternalUserController;
 use App\Http\Controllers\Mail\EmailTemplateController;
 use App\Http\Controllers\Party\PartyController;
 use App\Http\Controllers\Profile\ProfileController;
@@ -160,13 +161,13 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
     });
 
     //**** Internal User Related Route ****//
-    Route::controller(UserManageController::class)->group(function () {
-        Route::post('/user', 'store');
-        Route::get('/users', 'view');
-        Route::get('/user/{id}', 'viewDetails');
-        Route::post('/user/{id}', 'update');
-        Route::delete('/user/{id}', 'delete');
-        Route::patch('/user/{id}', 'statusUpdate');
+    Route::controller(InternalUserController::class)->group(function () {
+        Route::post('/internaluser', 'store');
+        Route::get('/internalusers', 'view');
+        Route::get('/internaluser/{id}', 'viewDetails');
+        Route::post('/internaluser/{id}', 'update');
+        Route::delete('/internaluser/{id}', 'delete');
+        Route::patch('/internaluser/{id}', 'statusUpdate');
     });
 
     //**** Party Related Route ****//

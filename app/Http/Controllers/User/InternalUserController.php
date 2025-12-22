@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\InternalUser;
 use App\Services\RoleService;
 use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
@@ -12,10 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class UserManageController extends Controller
+class InternalUserController extends Controller
 {
     use UserActivityTrait;
     protected RoleService $roleService;
@@ -28,118 +27,86 @@ class UserManageController extends Controller
         $this->access = $access;
     }
 
-    // Create new User
+    // Create new Internal User
     public function store(Request $request)
     {
-        // Validation
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:100|unique:users,email',
+            'email' => 'required|email|max:100|unique:internal_users,email',
             'password' => 'required|string|min:6',
-            'phone' => 'required|string|max:20',
-            'role_id' => 'required|integer|exists:roles,id',
-            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female',
-            'marital_status' => 'nullable|in:single,married',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'rate' => 'nullable|numeric|min:0',
+            'role' => 'required|in:bd_manager,ac_manager,recruiter',
+            'commission_on' => 'nullable|in:gross-margin,net-margin',
+            'rate_type' => 'nullable|in:percentage,fixed',
+            'recuesive' => 'nullable|boolean',
+            'month' => 'nullable|in:all_months,january,february,march,april,may,june,july,august,september,october,november,december',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        // Ensure actor (the one creating/assigning) exists
+        // ✅ Auth check
         $actor = Auth::user();
         if (! $actor) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated.'
+                'message' => 'Unauthenticated.',
             ], 401);
         }
 
         DB::beginTransaction();
         try {
-            // Image upload (same as your code)
-            $imagePath = null;
-            $signaturePath = null;
 
+            // ✅ Image upload
+            $imagePath = null;
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
-                $imageName = rand(100000, 999999) . '_' . time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('users/images', $imageName, 'public');
-                $imagePath = 'users/images/' . $imageName;  // ✅ Fixed: Removed 'storage/' prefix
+                $imageName = uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->storeAs('internal_users', $imageName, 'public');
+                $imagePath = 'internal_users/' . $imageName;
             }
 
-            if ($request->hasFile('signature')) {
-                $signature = $request->file('signature');
-                $signatureName = rand(100000, 999999) . '_' . time() . '.' . $signature->getClientOriginalExtension();
-                $signature->storeAs('users/signatures', $signatureName, 'public');
-                $signaturePath = 'users/signatures/' . $signatureName;  // ✅ Fixed: Removed 'storage/' prefix
-            }
-
-            // Create User
-            $user = User::create([
+            // ✅ Create Internal User
+            $internalUser = InternalUser::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'username' => generateUniqueUsername($request->name),
                 'password' => Hash::make($request->password),
                 'phone' => $request->phone,
-                'address' => $request->address,
                 'gender' => $request->gender,
-                'marital_status' => $request->marital_status,
                 'image' => $imagePath,
-                'signature' => $signaturePath,
-                'business_id' => $actor->business_id,
-                'status' => 'approved',
+                'rate' => $request->rate,
+                'role' => $request->role, // ✅ Direct assign
+                'commission_on' => $request->commission_on ?? 'gross-margin',
+                'rate_type' => $request->rate_type ?? 'percentage',
+                'recuesive' => $request->recuesive ?? 0,
+                'month' => $request->month ?? 'all_months',
+                'business_id' => $actor->business_id, // ✅ secure
             ]);
 
-            // Use RoleService to assign the role (this may throw exceptions on auth/validation)
-            $assignedRoleName = $this->roleService->assignRole($actor, $user, (int)$request->role_id);
-
-            // All good -> commit
             DB::commit();
 
-            // Log activity
-            $this->logActivity('create_user');
+             // Log activity
+            $this->logActivity('create_internal_user');
 
             return response()->json([
                 'success' => true,
-                'message' => 'User created successfully',
-                'data' => $user,
-                'assigned_role' => $assignedRoleName,
+                'message' => 'Internal user created successfully',
+                'data' => $internalUser,
             ], 201);
-        } catch (Exception $e) {
-            // rollback DB if anything went wrong
+        } catch (\Exception $e) {
             DB::rollBack();
 
-            // Map common messages to proper status codes if you like
-            $msg = $e->getMessage();
-
-            if ($msg === 'You are not allowed to assign this role.' || $msg === 'You do not have permission to assign roles.') {
-                // Role assignment unauthorized by actor
-                return response()->json([
-                    'success' => false,
-                    'message' => $msg,
-                ], 403);
-            }
-
-            if ($msg === 'User already has this role.') {
-                // unlikely at creation, but handle anyway
-                return response()->json([
-                    'success' => false,
-                    'message' => $msg,
-                ], 409);
-            }
-
-            // Generic failure
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user',
-                'error' => $e->getMessage()
+                'message' => 'Failed to create internal user',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -152,16 +119,16 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $users = $this->access->filterByBusiness($actor, \App\Models\User::class)->with('roles')->get();
+            $internalUsers = InternalUser::where('business_id', $actor->business_id)->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $users
+                'data' => $internalUsers
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch users',
+                'message' => 'Failed to fetch internal Users',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -175,10 +142,10 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $user = User::findOrFail($id);
+            $internalUser = InternalUser::findOrFail($id);
 
             // Authorization check using service
-            if (! $this->access->canViewResource($actor, $user)) {
+            if (! $this->access->canViewResource($actor, $internalUser )) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to view this user.'
@@ -187,7 +154,7 @@ class UserManageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $user
+                'data' => $internalUser
             ]);
         } catch (Exception $e) {
             return response()->json([
