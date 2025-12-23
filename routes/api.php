@@ -167,7 +167,7 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
         Route::get('/internaluser/{id}', 'viewDetails');
         Route::post('/internaluser/{id}', 'update');
         Route::delete('/internaluser/{id}', 'delete');
-        Route::patch('/internaluser/{id}', 'statusUpdate');
+        Route::patch('/internaluser/{id}', 'roleUpdate');
     });
 
     //**** Party Related Route ****//

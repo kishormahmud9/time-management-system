@@ -46,8 +46,9 @@ class DemoDataSeeder extends Seeder
             'create_user',
             'view_user',
             'update_user',
+            'status_update_user',
             'delete_user',
-            
+
             // Timesheet Management
             'create_timesheet',
             'view_timesheet',
@@ -55,32 +56,40 @@ class DemoDataSeeder extends Seeder
             'delete_timesheet',
             'approve_timesheet',
             'submit_timesheet',
-            
+
             // Party Management
             'create_party',
             'view_party',
             'update_party',
             'delete_party',
-            
+
             // Project Management
             'create_project',
             'view_project',
             'update_project',
             'delete_project',
-            
+
             // Business Management
             'create_business',
             'view_business',
             'update_business',
             'delete_business',
-            
+
             // Role & Permission Management
             'manage_roles',
             'manage_permissions',
-            
+
             // Reports
             'view_reports',
             'export_reports',
+
+            // User Management
+            'create_internal_user',
+            'view_internal_user',
+            'update_internal_user',
+            'delete_internal_user',
+            'status_update_internal_user',
+            'role_update_internal_user',
         ];
 
         foreach ($permissions as $permission) {
@@ -88,24 +97,48 @@ class DemoDataSeeder extends Seeder
         }
 
         // Assign Permissions to Roles
-        
+
         // System Admin - All permissions
         $systemAdminRole->syncPermissions(Permission::all());
 
         // Business Admin - Most permissions except business management
         $businessAdminRole->syncPermissions([
-            'create_user', 'view_user', 'update_user', 'delete_user',
-            'create_timesheet', 'view_timesheet', 'update_timesheet', 'delete_timesheet', 'approve_timesheet', 'submit_timesheet',
-            'create_party', 'view_party', 'update_party', 'delete_party',
-            'create_project', 'view_project', 'update_project', 'delete_project',
+            'create_user',
+            'view_user',
+            'update_user',
+            'delete_user',
+            'create_timesheet',
+            'view_timesheet',
+            'update_timesheet',
+            'delete_timesheet',
+            'approve_timesheet',
+            'submit_timesheet',
+            'create_party',
+            'view_party',
+            'update_party',
+            'delete_party',
+            'create_project',
+            'view_project',
+            'update_project',
+            'delete_project',
             'manage_roles',
-            'view_reports', 'export_reports',
+            'view_reports',
+            'export_reports',
+            'create_internal_user',
+            'view_internal_user',
+            'update_internal_user',
+            'delete_internal_user',
+            'status_update_internal_user',
+            'role_update_internal_user',
         ]);
 
         // Staff - Limited permissions
         $staffRole->syncPermissions([
             'view_user',
-            'create_timesheet', 'view_timesheet', 'update_timesheet', 'submit_timesheet',
+            'create_timesheet',
+            'view_timesheet',
+            'update_timesheet',
+            'submit_timesheet',
             'view_party',
             'view_project',
             'view_reports',
@@ -113,7 +146,10 @@ class DemoDataSeeder extends Seeder
 
         // User - Basic permissions
         $userRole->syncPermissions([
-            'create_timesheet', 'view_timesheet', 'update_timesheet', 'submit_timesheet',
+            'create_timesheet',
+            'view_timesheet',
+            'update_timesheet',
+            'submit_timesheet',
             'view_party',
             'view_project',
         ]);

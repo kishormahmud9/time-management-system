@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class InternalUserController extends Controller
@@ -92,7 +93,7 @@ class InternalUserController extends Controller
 
             DB::commit();
 
-             // Log activity
+            // Log activity
             $this->logActivity('create_internal_user');
 
             return response()->json([
@@ -145,7 +146,7 @@ class InternalUserController extends Controller
             $internalUser = InternalUser::findOrFail($id);
 
             // Authorization check using service
-            if (! $this->access->canViewResource($actor, $internalUser )) {
+            if (! $this->access->canViewResource($actor, $internalUser)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to view this user.'
@@ -168,250 +169,241 @@ class InternalUserController extends Controller
     // Update User
     public function update(Request $request, $id)
     {
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+
+        $internalUser = InternalUser::findOrFail($id);
+
+        // Authorization check
+        if (! $this->access->canModifyResource($actor, $internalUser)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to modify this user.'
+            ], 403);
+        }
+
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:100|unique:internal_users,email,' . $internalUser->id,
+            'password' => 'nullable|string|min:6',
+            'phone' => 'nullable|string|max:20',
+            'gender' => 'nullable|in:male,female',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'rate' => 'nullable|numeric|min:0',
+            'role' => 'required|in:bd_manager,ac_manager,recruiter',
+            'commission_on' => 'nullable|in:gross-margin,net-margin',
+            'rate_type' => 'nullable|in:percentage,fixed',
+            'recuesive' => 'nullable|boolean',
+            'month' => 'nullable|in:all_months,january,february,march,april,may,june,july,august,september,october,november,december',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
         try {
-            $actor = Auth::user();
-            if (! $actor) {
-                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
-            }
-
-            $user = User::findOrFail($id);
-
-            // Authorization: must be allowed to modify
-            if (! $this->access->canModifyResource($actor, $user)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You are not allowed to modify this user.'
-                ], 403);
-            }
-
-            // Validation
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:100',
-                'email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
-                'password' => 'nullable|string|min:6',
-                'phone' => 'required|string|max:20',
-                'role_id' => 'required|integer|exists:roles,id',
-                'address' => 'nullable|string|max:255',
-                'gender' => 'nullable|in:male,female',
-                'marital_status' => 'nullable|in:single,married',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-                'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            DB::beginTransaction();
-
-            // handle image / signature
-            // NOTE: store relative paths (recommended) so Storage::disk('public')->exists() works.
-            $imagePath = $user->image;
-            $signaturePath = $user->signature;
 
             if ($request->hasFile('image')) {
-                // delete old if exists (ensure stored path is relative to disk root)
-                if ($user->image && Storage::disk('public')->exists($user->image)) {
-                    Storage::disk('public')->delete($user->image);
+                // delete old image
+                if ($internalUser->image && Storage::disk('public')->exists($internalUser->image)) {
+                    Storage::disk('public')->delete($internalUser->image);
                 }
 
                 $image = $request->file('image');
-                $imageName = rand(100000, 999999) . '_' . time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('users/images', $imageName, 'public');
-                $imagePath = 'users/images/' . $imageName; // save relative path
+                $imageName = uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->storeAs('internal_users', $imageName, 'public');
+                $internalUser->image = 'internal_users/' . $imageName;
             }
 
-            if ($request->hasFile('signature')) {
-                if ($user->signature && Storage::disk('public')->exists($user->signature)) {
-                    Storage::disk('public')->delete($user->signature);
-                }
+            $internalUser->name = $request->name;
+            $internalUser->email = $request->email;
+            $internalUser->phone = $request->phone;
+            $internalUser->gender = $request->gender;
+            $internalUser->rate = $request->rate;
+            $internalUser->role = $request->role;
+            $internalUser->commission_on = $request->commission_on ?? $internalUser->commission_on;
+            $internalUser->rate_type = $request->rate_type ?? $internalUser->rate_type;
+            $internalUser->recuesive = $request->recuesive ?? $internalUser->recuesive;
+            $internalUser->month = $request->month ?? $internalUser->month;
 
-                $signature = $request->file('signature');
-                $signatureName = rand(100000, 999999) . '_' . time() . '.' . $signature->getClientOriginalExtension();
-                $signature->storeAs('users/signatures', $signatureName, 'public');
-                $signaturePath = 'users/signatures/' . $signatureName; // save relative path
+            if ($request->filled('password')) {
+                $internalUser->password = Hash::make($request->password);
             }
 
-            // Update user fields
-            $user->update([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => $request->password ? Hash::make($request->password) : $user->password,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'gender' => $request->gender,
-                'marital_status' => $request->marital_status,
-                'image' => $imagePath,
-                'signature' => $signaturePath,
-            ]);
-
-            // Role update via RoleService (ensures same auth rules for role assignment)
-            $assignedRoleName = null;
-            if ($request->filled('role_id')) {
-                try {
-                    $assignedRoleName = $this->roleService->syncUserRole($actor, $user, (int)$request->role_id);
-                } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-                    DB::rollBack();
-                    return response()->json(['success' => false, 'message' => 'Role not found.'], 404);
-                } catch (Exception $e) {
-                    DB::rollBack();
-                    $msg = $e->getMessage();
-                    if ($msg === 'You are not allowed to assign this role.' || $msg === 'You do not have permission to assign roles.') {
-                        return response()->json(['success' => false, 'message' => $msg], 403);
-                    }
-                    return response()->json(['success' => false, 'message' => 'Failed to update role', 'error' => $msg], 500);
-                }
-            }
+            $internalUser->save();
 
             DB::commit();
 
             // Activity log
-            $this->logActivity('update_user');
+            $this->logActivity('update_internal_user');
 
             return response()->json([
                 'success' => true,
-                'message' => 'User updated successfully',
-                'data' => $user,
-                'assigned_role' => $assignedRoleName
+                'message' => 'Internal user updated successfully',
+                'data' => $internalUser,
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update User',
-                'error' => $e->getMessage()
+                'message' => 'Failed to update internal user',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
 
     // Delete User
     public function delete($id)
     {
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+
         try {
-            $actor = Auth::user();
-            if (! $actor) {
-                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
-            }
+            $internalUser = InternalUser::findOrFail($id);
 
-            $user = User::findOrFail($id);
-
-            // Authorization: only allowed actors can delete
-            if (! $this->access->canModifyResource($actor, $user)) {
+            // Authorization check
+            if (! $this->access->canModifyResource($actor, $internalUser)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not allowed to delete this user.'
+                    'message' => 'You are not allowed to delete this internal user.'
+                ], 403);
+            }
+
+            // Extra safety: business isolation
+            if ($internalUser->business_id !== $actor->business_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized business access.'
                 ], 403);
             }
 
             DB::beginTransaction();
 
-            // Delete image file if exists (assumes stored relative path like 'users/images/..')
-            if ($user->image && Storage::disk('public')->exists($user->image)) {
-                Storage::disk('public')->delete($user->image);
+            // Delete profile image if exists
+            if ($internalUser->image && Storage::disk('public')->exists($internalUser->image)) {
+                Storage::disk('public')->delete($internalUser->image);
             }
 
-            // Delete signature file if exists
-            if ($user->signature && Storage::disk('public')->exists($user->signature)) {
-                Storage::disk('public')->delete($user->signature);
-            }
 
-            // Optionally remove roles/relations if needed
-            // $user->roles()->detach();
-
-            // Delete user from database
-            $user->delete();
+            // Delete internal user
+            $internalUser->delete();
 
             DB::commit();
 
             // Log activity
-            $this->logActivity('delete_user');
+            $this->logActivity('delete_internal_user');
 
             return response()->json([
                 'success' => true,
-                'message' => 'User deleted successfully'
+                'message' => 'Internal user deleted successfully'
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'Internal user not found'
             ], 404);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete user',
+                'message' => 'Failed to delete internal user',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    // Update User Status
-    public function statusUpdate(Request $request, $id)
+
+    // Update Internal User Role
+    public function roleUpdate(Request $request, $id)
     {
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'role' => 'required|in:bd_manager,ac_manager,recruiter',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         try {
-            $actor = Auth::user();
-            if (! $actor) {
-                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
-            }
+            $internalUser = InternalUser::findOrFail($id);
 
-            // Validation
-            $validator = Validator::make($request->all(), [
-                'status' => 'required|in:approved,rejected,pending',
-            ]);
-
-            if ($validator->fails()) {
+            // Authorization check
+            if (! $this->access->canModifyResource($actor, $internalUser)) {
                 return response()->json([
                     'success' => false,
-                    'errors' => $validator->errors(),
-                ], 422);
+                    'message' => 'You are not allowed to change this internal user role.'
+                ], 403);
             }
 
-            $user = User::findOrFail($id);
-
-            // Authorization: only allowed actors can change status
-            if (! $this->access->canModifyResource($actor, $user)) {
+            // Extra safety: business isolation
+            if ($internalUser->business_id !== $actor->business_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not allowed to change this user status.'
+                    'message' => 'Unauthorized business access.'
                 ], 403);
             }
 
             DB::beginTransaction();
 
-            // Update status
-            $user->status = $request->status;
-            $user->save();
+            // Update role
+            $internalUser->role = $request->role;
+            $internalUser->save();
 
             DB::commit();
 
-            // Log activity (e.g., 'approved_user' or 'rejected_user')
-            $this->logActivity("{$request->status}_user");
-
+            // Activity log (explicit & searchable)
+            $this->logActivity("{$request->role}_internal_user");
             return response()->json([
                 'success' => true,
-                'message' => 'User status updated successfully',
+                'message' => 'Internal user role updated successfully',
                 'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'status' => $user->status,
+                    'id' => $internalUser->id,
+                    'name' => $internalUser->name,
+                    'role' => $internalUser->role,
                 ],
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'Internal User Not Found'
             ], 404);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update user status',
+                'message' => 'Failed to update internal user role',
                 'error' => $e->getMessage(),
             ], 500);
         }
