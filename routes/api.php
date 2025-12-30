@@ -14,8 +14,7 @@ use App\Http\Controllers\RoleAndPermission\UserHasRoleController;
 use App\Http\Controllers\Timesheet\TimesheetManageController;
 use App\Http\Controllers\User\UserActivityLogController;
 use App\Http\Controllers\User\UserManageController;
-
-
+use App\Http\Controllers\User\UserDetailsController;
 
 Route::get('/', function () {
     return response()->json([
@@ -175,5 +174,14 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
         Route::post('/party', 'store');
         Route::put('/party/{id}', 'update');
         Route::delete('/party/{id}', 'delete');
+    });
+
+    //**** User Details Related Route ****//
+    Route::controller(UserDetailsController::class)->group(function () {
+        Route::post('/user-details', 'store');
+        Route::get('/user-details', 'view');
+        Route::get('/user-details/{id}', 'viewDetails');
+        Route::post('/user-details/{id}', 'update');
+        Route::delete('/user-details/{id}', 'delete');
     });
 });

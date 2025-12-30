@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('email', 100)->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
             $table->string('phone', 20)->nullable()->index();
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->unsignedBigInteger('business_id')->nullable();
@@ -26,7 +25,7 @@ return new class extends Migration
             $table->enum('commission_on', ['gross-margin', 'net-margin'])->default('gross-margin');
             $table->enum('rate_type', ['percentage', 'fixed'])->default('percentage');
             $table->tinyInteger('recuesive')->default(0);
-            $table->enum('month', ['all_months', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'])->default('all_months');
+            $table->enum('month', ['all_months', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'])->nullable();
             $table->timestamps();
         });
     }

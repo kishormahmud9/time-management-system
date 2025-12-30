@@ -25,7 +25,7 @@ class UserActivityLogController extends Controller
             }
 
             // Base query
-            $query = UserLog::query();
+            $query = UserLog::with('user');
 
             // Role-based filtering:
             // 1) System Admin -> no filter (see all)
