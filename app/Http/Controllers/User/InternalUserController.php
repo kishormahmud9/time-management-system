@@ -77,7 +77,6 @@ class InternalUserController extends Controller
             $internalUser = InternalUser::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
                 'phone' => $request->phone,
                 'gender' => $request->gender,
                 'image' => $imagePath,
@@ -190,7 +189,6 @@ class InternalUserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100|unique:internal_users,email,' . $internalUser->id,
-            'password' => 'nullable|string|min:6',
             'phone' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -234,10 +232,6 @@ class InternalUserController extends Controller
             $internalUser->rate_type = $request->rate_type ?? $internalUser->rate_type;
             $internalUser->recuesive = $request->recuesive ?? $internalUser->recuesive;
             $internalUser->month = $request->month ?? $internalUser->month;
-
-            if ($request->filled('password')) {
-                $internalUser->password = Hash::make($request->password);
-            }
 
             $internalUser->save();
 
