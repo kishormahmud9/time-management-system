@@ -34,7 +34,6 @@ class InternalUserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100|unique:internal_users,email',
-            'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:20',
             'gender' => 'nullable|in:male,female',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
