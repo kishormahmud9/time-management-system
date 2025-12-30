@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_details', function (Blueprint $table) {
+         Schema::create('user_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             // =========================
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('account_manager_recurssive_month')->nullable();
             $table->foreignId('account_manager_id')
                 ->nullable()
-                ->constrained('internal_user');
+                ->constrained('internal_users');
             // =========================
             // Business Development Manager
             // =========================
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->integer('business_development_manager_recurssive_month')->nullable();
             $table->foreignId('business_development_manager_id')
                 ->nullable()
-                ->constrained('internal_user');
+                ->constrained('internal_users');
             // =========================
             // Recruiter
             // =========================
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->integer('recruiter_recurssive_month')->nullable();
             $table->foreignId('recruiter_id')
                 ->nullable()
-                ->constrained('internal_user');
+                ->constrained('internal_users');
             // =========================
             // Client / Employer / Vendor
             // =========================

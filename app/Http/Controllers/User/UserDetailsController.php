@@ -65,8 +65,6 @@ class UserDetailsController extends Controller
         try {
 
 
-
-
             DB::commit();
 
             // Log activity
