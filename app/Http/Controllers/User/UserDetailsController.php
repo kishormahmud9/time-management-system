@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserDetail;
 use App\Services\RoleService;
 use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +32,6 @@ class UserDetailsController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
             'business_id' => 'required|exists:businesses,id',
-
             'party_id' => 'nullable|exists:parties,id',
 
             'client_rate' => 'required|numeric|min:0',
@@ -39,7 +40,7 @@ class UserDetailsController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
 
-            // Optional commissions
+            // Commissions
             'account_manager_commission' => 'nullable|numeric|min:0',
             'business_development_manager_commission' => 'nullable|numeric|min:0',
             'recruiter_commission' => 'nullable|numeric|min:0',
@@ -52,7 +53,6 @@ class UserDetailsController extends Controller
             ], 422);
         }
 
-        // ✅ Auth check
         $actor = Auth::user();
         if (! $actor) {
             return response()->json([
@@ -63,24 +63,67 @@ class UserDetailsController extends Controller
 
         DB::beginTransaction();
         try {
+            $userDetail = UserDetail::create([
+                'user_id' => $request->user_id,
+                'business_id' => $request->business_id,
+                'party_id' => $request->party_id,
+
+                // Rates
+                'client_rate' => $request->client_rate,
+                'consultant_rate' => $request->consultant_rate,
+
+                // Account Manager
+                'account_manager_commission' => $request->account_manager_commission ?? 0,
+                'account_manager_commission_rate_count_on' => $request->account_manager_commission_rate_count_on,
+                'account_manager_commission_rate_type' => $request->account_manager_commission_rate_type ?? 1,
+                'account_manager_recurssive' => $request->account_manager_recurssive ?? false,
+                'account_manager_recurssive_month' => $request->account_manager_recurssive_month,
+                'account_manager_id' => $request->account_manager_id,
+
+                // Business Development Manager
+                'business_development_manager_commission' => $request->business_development_manager_commission ?? 0,
+                'business_development_manager_commission_rate_count_on' => $request->business_development_manager_commission_rate_count_on,
+                'business_development_manager_commission_rate_type' => $request->business_development_manager_commission_rate_type ?? 1,
+                'business_development_manager_recurssive' => $request->business_development_manager_recurssive ?? false,
+                'business_development_manager_recurssive_month' => $request->business_development_manager_recurssive_month,
+                'business_development_manager_id' => $request->business_development_manager_id,
+
+                // Recruiter
+                'recruiter_commission' => $request->recruiter_commission ?? 0,
+                'recruiter_rate_count_on' => $request->recruiter_rate_count_on,
+                'recruiter_rate_type' => $request->recruiter_rate_type ?? 1,
+                'recruiter_recurssive' => $request->recruiter_recurssive ?? false,
+                'recruiter_recurssive_month' => $request->recruiter_recurssive_month,
+                'recruiter_id' => $request->recruiter_id,
+
+                // Contract
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+
+                // Misc
+                'active' => true,
+                'address' => $request->address,
+                'invoice_to' => $request->invoice_to,
+                'file_folder' => $request->file_folder,
+            ]);
 
 
             DB::commit();
 
-            // Log activity
+            // Activity Log
             $this->logActivity('assign_client_to_user');
 
             return response()->json([
                 'success' => true,
-                'message' => 'Internal user created successfully',
-                'data' => "",
+                'message' => 'User details stored successfully',
+                'data' => $userDetail,
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create internal user',
+                'message' => 'Failed to store user details',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -94,16 +137,16 @@ class UserDetailsController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $internalUsers = InternalUser::where('business_id', $actor->business_id)->get();
+            $userDetail = UserDetail::where('business_id', $actor->business_id)->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $internalUsers
+                'data' => $userDetail
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch internal Users',
+                'message' => 'Failed to fetch user details',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -117,10 +160,10 @@ class UserDetailsController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $internalUser = InternalUser::findOrFail($id);
+            $userDetail = UserDetail::findOrFail($id);
 
             // Authorization check using service
-            if (! $this->access->canViewResource($actor, $internalUser)) {
+            if (! $this->access->canViewResource($actor, $userDetail)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to view this user.'
@@ -129,12 +172,12 @@ class UserDetailsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $internalUser
+                'data' => $userDetail
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found',
+                'message' => 'User Details not found',
                 'error' => $e->getMessage()
             ], 404);
         }
@@ -147,34 +190,64 @@ class UserDetailsController extends Controller
         if (! $actor) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated.'
+                'message' => 'Unauthenticated.',
             ], 401);
         }
 
-        $internalUser = InternalUser::findOrFail($id);
+        $userDetail = UserDetail::findOrFail($id);
 
-        // Authorization check
-        if (! $this->access->canModifyResource($actor, $internalUser)) {
+        // Authorization
+        if (! $this->access->canModifyResource($actor, $userDetail)) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not allowed to modify this user.'
+                'message' => 'You are not allowed to modify this user detail.',
             ], 403);
         }
 
         // Validation
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|max:100|unique:internal_users,email,' . $internalUser->id,
-            'password' => 'nullable|string|min:6',
-            'phone' => 'nullable|string|max:20',
-            'gender' => 'nullable|in:male,female',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'rate' => 'nullable|numeric|min:0',
-            'role' => 'required|in:bd_manager,ac_manager,recruiter',
-            'commission_on' => 'nullable|in:gross-margin,net-margin',
-            'rate_type' => 'nullable|in:percentage,fixed',
-            'recuesive' => 'nullable|boolean',
-            'month' => 'nullable|in:all_months,january,february,march,april,may,june,july,august,september,october,november,december',
+            'party_id' => 'nullable|exists:parties,id',
+
+            // Rates
+            'client_rate' => 'required|numeric|min:0',
+            'consultant_rate' => 'nullable|numeric|min:0',
+            'w2' => 'nullable|numeric|min:0',
+            'c2c_or_other' => 'nullable|numeric|min:0',
+            'w2_or_c2c_type' => 'nullable|integer',
+
+            // Account Manager
+            'account_manager_id' => 'nullable|exists:internal_users,id',
+            'account_manager_commission' => 'nullable|numeric|min:0',
+            'account_manager_commission_rate_type' => 'nullable|integer',
+            'account_manager_commission_rate_count_on' => 'nullable|string',
+            'account_manager_recurssive' => 'nullable|boolean',
+            'account_manager_recurssive_month' => 'nullable|integer',
+
+            // Business Development Manager
+            'business_development_manager_id' => 'nullable|exists:internal_users,id',
+            'business_development_manager_commission' => 'nullable|numeric|min:0',
+            'business_development_manager_commission_rate_type' => 'nullable|integer',
+            'business_development_manager_commission_rate_count_on' => 'nullable|string',
+            'business_development_manager_recurssive' => 'nullable|boolean',
+            'business_development_manager_recurssive_month' => 'nullable|integer',
+
+            // Recruiter
+            'recruiter_id' => 'nullable|exists:internal_users,id',
+            'recruiter_commission' => 'nullable|numeric|min:0',
+            'recruiter_rate_type' => 'nullable|integer',
+            'recruiter_rate_count_on' => 'nullable|string',
+            'recruiter_recurssive' => 'nullable|boolean',
+            'recruiter_recurssive_month' => 'nullable|integer',
+
+            // Contract
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+
+            // Misc
+            'active' => 'nullable|boolean',
+            'address' => 'nullable|string|max:255',
+            'invoice_to' => 'nullable|string|max:255',
+            'file_folder' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -185,57 +258,69 @@ class UserDetailsController extends Controller
         }
 
         DB::beginTransaction();
+
         try {
+            $userDetail->update($request->only([
+                'party_id',
 
-            if ($request->hasFile('image')) {
-                // delete old image
-                if ($internalUser->image && Storage::disk('public')->exists($internalUser->image)) {
-                    Storage::disk('public')->delete($internalUser->image);
-                }
+                'client_rate',
+                'consultant_rate',
+                'w2',
+                'c2c_or_other',
+                'w2_or_c2c_type',
 
-                $image = $request->file('image');
-                $imageName = uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('internal_users', $imageName, 'public');
-                $internalUser->image = 'internal_users/' . $imageName;
-            }
+                'account_manager_id',
+                'account_manager_commission',
+                'account_manager_commission_rate_type',
+                'account_manager_commission_rate_count_on',
+                'account_manager_recurssive',
+                'account_manager_recurssive_month',
 
-            $internalUser->name = $request->name;
-            $internalUser->email = $request->email;
-            $internalUser->phone = $request->phone;
-            $internalUser->gender = $request->gender;
-            $internalUser->rate = $request->rate;
-            $internalUser->role = $request->role;
-            $internalUser->commission_on = $request->commission_on ?? $internalUser->commission_on;
-            $internalUser->rate_type = $request->rate_type ?? $internalUser->rate_type;
-            $internalUser->recuesive = $request->recuesive ?? $internalUser->recuesive;
-            $internalUser->month = $request->month ?? $internalUser->month;
+                'business_development_manager_id',
+                'business_development_manager_commission',
+                'business_development_manager_commission_rate_type',
+                'business_development_manager_commission_rate_count_on',
+                'business_development_manager_recurssive',
+                'business_development_manager_recurssive_month',
 
-            if ($request->filled('password')) {
-                $internalUser->password = Hash::make($request->password);
-            }
+                'recruiter_id',
+                'recruiter_commission',
+                'recruiter_rate_type',
+                'recruiter_rate_count_on',
+                'recruiter_recurssive',
+                'recruiter_recurssive_month',
 
-            $internalUser->save();
+                'start_date',
+                'end_date',
+
+                'active',
+                'address',
+                'invoice_to',
+                'file_folder',
+            ]));
 
             DB::commit();
 
-            // Activity log
-            $this->logActivity('update_internal_user');
+            $this->logActivity('update_user_detail', [
+                'user_detail_id' => $userDetail->id,
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Internal user updated successfully',
-                'data' => $internalUser,
+                'message' => 'User detail updated successfully',
+                'data' => $userDetail->fresh(),
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update internal user',
+                'message' => 'Failed to update user detail',
                 'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
 
 
@@ -251,10 +336,10 @@ class UserDetailsController extends Controller
         }
 
         try {
-            $internalUser = InternalUser::findOrFail($id);
+            $userDetail = UserDetail::findOrFail($id);
 
             // Authorization check
-            if (! $this->access->canModifyResource($actor, $internalUser)) {
+            if (! $this->access->canModifyResource($actor, $userDetail)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to delete this internal user.'
@@ -262,7 +347,7 @@ class UserDetailsController extends Controller
             }
 
             // Extra safety: business isolation
-            if ($internalUser->business_id !== $actor->business_id) {
+            if ($userDetail->business_id !== $actor->business_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized business access.'
@@ -271,29 +356,24 @@ class UserDetailsController extends Controller
 
             DB::beginTransaction();
 
-            // Delete profile image if exists
-            if ($internalUser->image && Storage::disk('public')->exists($internalUser->image)) {
-                Storage::disk('public')->delete($internalUser->image);
-            }
 
-
-            // Delete internal user
-            $internalUser->delete();
+            // Delete user detail
+            $userDetail->delete();
 
             DB::commit();
 
             // Log activity
-            $this->logActivity('delete_internal_user');
+            $this->logActivity('delete_user_detail');
 
             return response()->json([
                 'success' => true,
-                'message' => 'Internal user deleted successfully'
+                'message' => 'User detail deleted successfully'
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Internal user not found'
+                'message' => 'Internal user details not found'
             ], 404);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -301,84 +381,6 @@ class UserDetailsController extends Controller
                 'success' => false,
                 'message' => 'Failed to delete internal user',
                 'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-    // Update Internal User Role
-    public function roleUpdate(Request $request, $id)
-    {
-        $actor = Auth::user();
-        if (! $actor) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.'
-            ], 401);
-        }
-
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'role' => 'required|in:bd_manager,ac_manager,recruiter',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        try {
-            $internalUser = InternalUser::findOrFail($id);
-
-            // Authorization check
-            if (! $this->access->canModifyResource($actor, $internalUser)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You are not allowed to change this internal user role.'
-                ], 403);
-            }
-
-            // Extra safety: business isolation
-            if ($internalUser->business_id !== $actor->business_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized business access.'
-                ], 403);
-            }
-
-            DB::beginTransaction();
-
-            // Update role
-            $internalUser->role = $request->role;
-            $internalUser->save();
-
-            DB::commit();
-
-            // Activity log (explicit & searchable)
-            $this->logActivity("{$request->role}_internal_user");
-            return response()->json([
-                'success' => true,
-                'message' => 'Internal user role updated successfully',
-                'data' => [
-                    'id' => $internalUser->id,
-                    'name' => $internalUser->name,
-                    'role' => $internalUser->role,
-                ],
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal User Not Found'
-            ], 404);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update internal user role',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
