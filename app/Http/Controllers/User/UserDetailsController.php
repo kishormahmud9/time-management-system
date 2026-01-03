@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class UserDetailsController extends Controller
 {
@@ -30,20 +31,67 @@ class UserDetailsController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'business_id' => 'required|exists:businesses,id',
-            'party_id' => 'nullable|exists:parties,id',
 
-            'client_rate' => 'required|numeric|min:0',
+            // ========================
+            // Core Relations
+            // ========================
+            'user_id' => [
+                'required',
+                'exists:users,id',
+                Rule::unique('user_details')
+                    ->where(
+                        fn($q) =>
+                        $q->where('business_id', $request->business_id)
+                            ->where('active', true)
+                    ),
+            ],
+
+            'party_id'    => 'nullable|exists:parties,id',
+
+            // ========================
+            // Rates (Business Critical)
+            // ========================
+            'client_rate'     => 'required|numeric|min:0',
             'consultant_rate' => 'nullable|numeric|min:0',
 
+            // ========================
+            // Contract Dates
+            // ========================
             'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
 
-            // Commissions
+            // ========================
+            // Account Manager
+            // ========================
+            'account_manager_id' => 'nullable|exists:internal_users,id',
             'account_manager_commission' => 'nullable|numeric|min:0',
+            'account_manager_commission_rate_type' => 'nullable|in:1,2',
+            'account_manager_commission_rate_count_on' => 'nullable|string',
+            'account_manager_recurssive' => 'nullable|boolean',
+            'account_manager_recurssive_month' =>
+            'nullable|required_if:account_manager_recurssive,true|integer|min:1',
+
+            // ========================
+            // Business Development Manager
+            // ========================
+            'business_development_manager_id' => 'nullable|exists:internal_users,id',
             'business_development_manager_commission' => 'nullable|numeric|min:0',
+            'business_development_manager_commission_rate_type' => 'nullable|in:1,2',
+            'business_development_manager_commission_rate_count_on' => 'nullable|string',
+            'business_development_manager_recurssive' => 'nullable|boolean',
+            'business_development_manager_recurssive_month' =>
+            'nullable|required_if:business_development_manager_recurssive,true|integer|min:1',
+
+            // ========================
+            // Recruiter
+            // ========================
+            'recruiter_id' => 'nullable|exists:internal_users,id',
             'recruiter_commission' => 'nullable|numeric|min:0',
+            'recruiter_rate_type' => 'nullable|in:1,2',
+            'recruiter_rate_count_on' => 'nullable|string',
+            'recruiter_recurssive' => 'nullable|boolean',
+            'recruiter_recurssive_month' =>
+            'nullable|required_if:recruiter_recurssive,true|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -65,7 +113,7 @@ class UserDetailsController extends Controller
         try {
             $userDetail = UserDetail::create([
                 'user_id' => $request->user_id,
-                'business_id' => $request->business_id,
+                'business_id' => $actor->business_id,
                 'party_id' => $request->party_id,
 
                 // Rates

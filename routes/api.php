@@ -184,4 +184,15 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
         Route::post('/user-details/{id}', 'update');
         Route::delete('/user-details/{id}', 'delete');
     });
+
+    //**** Timesheet Related Route (All Authenticated Users) ****//
+    // Route::controller(TimesheetManageController::class)->group(function () {
+    //     Route::post('/timesheet', 'store');
+    //     Route::get('/timesheet', 'view');
+    //     Route::get('/timesheet/{id}', 'viewDetails');
+    //     Route::put('/timesheet/{id}', 'update');
+    //     Route::delete('/timesheet/{id}', 'delete');
+    //     Route::patch('/timesheet/{id}', 'statusUpdate');
+    //     Route::get('/timesheet-defaults', 'getDefaults');
+    // });
 });

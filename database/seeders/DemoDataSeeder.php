@@ -90,6 +90,12 @@ class DemoDataSeeder extends Seeder
             'delete_internal_user',
             'status_update_internal_user',
             'role_update_internal_user',
+
+            // User Details Management
+            'create_user_details',
+            'view_user_details',
+            'update_user_details',
+            'delete_user_details',
         ];
 
         foreach ($permissions as $permission) {
@@ -130,6 +136,11 @@ class DemoDataSeeder extends Seeder
             'delete_internal_user',
             'status_update_internal_user',
             'role_update_internal_user',
+            'create_user_details',
+            'view_user_details',
+            'update_user_details',
+            'delete_user_details',
+
         ]);
 
         // Staff - Limited permissions
@@ -142,6 +153,10 @@ class DemoDataSeeder extends Seeder
             'view_party',
             'view_project',
             'view_reports',
+            'create_user_details',
+            'view_user_details',
+            'update_user_details',
+            'delete_user_details',
         ]);
 
         // User - Basic permissions
