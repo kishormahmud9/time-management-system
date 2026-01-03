@@ -29,6 +29,11 @@ return new class extends Migration
             $table->decimal('vacation_hours', 6, 2)->default(0);
 
             $table->text('note')->nullable();
+            $table->boolean('is_locked')->default(false);
+
+            $table->decimal('client_rate_snapshot', 10, 2)->nullable();
+            $table->decimal('consultant_rate_snapshot', 10, 2)->nullable();
+
 
             $table->timestamps();
 

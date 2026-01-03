@@ -21,6 +21,11 @@ return new class extends Migration
             $table->enum('party_type', ['client', 'vendor', 'employee']);
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
+
+            $table->unique(['business_id', 'phone'], 'uniq_party_phone_per_business');
+
+            // performance
+            $table->index(['business_id', 'party_type']);
         });
     }
 

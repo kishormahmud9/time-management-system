@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
-            $table->string('username', 50)->unique();
-            $table->string('email', 100)->unique();
+            $table->string('username', 50);
+            $table->string('email', 100);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('phone', 20)->nullable()->index();
@@ -27,6 +27,9 @@ return new class extends Migration
             $table->enum('status', ['approved', 'rejected', 'pending'])->default('pending');
             $table->rememberToken();
             $table->timestamps();
+
+            $table->unique(['business_id', 'username'], 'uniq_business_username');
+            $table->unique(['business_id', 'email'], 'uniq_business_email');
         });
 
         Schema::create('password_resets', function (Blueprint $table) {

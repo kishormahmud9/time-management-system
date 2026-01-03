@@ -20,6 +20,14 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete(); // same as onDelete('set null')
 
+            $table->foreignId('business_id')
+                ->constrained('businesses')
+                ->cascadeOnDelete();
+
+            $table->foreignId('user_detail_id')
+                ->constrained('user_details')
+                ->cascadeOnDelete();
+
             $table->foreignId('client_id')
                 ->nullable()
                 ->constrained('parties')
@@ -39,7 +47,15 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
 
-            $table->string('status')->default('draft');
+            $table->decimal('gross_margin', 10, 2)->nullable();
+            $table->decimal('net_margin', 10, 2)->nullable();
+
+            $table->decimal('account_manager_commission_amount', 10, 2)->nullable();
+            $table->decimal('bdm_commission_amount', 10, 2)->nullable();
+            $table->decimal('recruiter_commission_amount', 10, 2)->nullable();
+
+            $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])
+                ->default('draft');
             $table->decimal('total_hours', 8, 2)->default(0);
             $table->text('remarks')->nullable();
 
@@ -50,6 +66,7 @@ return new class extends Migration
 
             // indexes
             $table->index(['user_id', 'start_date', 'end_date']);
+            $table->index(['business_id', 'user_detail_id']);
             $table->index('status');
             $table->index('client_id');
         });

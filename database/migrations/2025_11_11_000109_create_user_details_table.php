@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('user_details', function (Blueprint $table) {
+        Schema::create('user_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             // =========================
@@ -28,7 +28,7 @@ return new class extends Migration
             // =========================
             // Business Development Manager
             // =========================
-            $table->float('business_development_manager_commission');   
+            $table->float('business_development_manager_commission');
             $table->string('business_development_manager_commission_rate_count_on')->nullable();
             $table->integer('business_development_manager_commission_rate_type');
             $table->boolean('business_development_manager_recurssive')->default(false);
@@ -92,6 +92,35 @@ return new class extends Migration
 
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
+
+
+            // ⚡ performance indexes
+            $table->index(['business_id', 'active'], 'idx_ud_business_active');
+
+            $table->index(
+                ['business_id', 'account_manager_id', 'active'],
+                'idx_ud_business_am'
+            );
+
+            $table->index(
+                ['business_id', 'business_development_manager_id', 'active'],
+                'idx_ud_business_bdm'
+            );
+
+            $table->index(
+                ['business_id', 'recruiter_id', 'active'],
+                'idx_ud_business_recruiter'
+            );
+
+            $table->index(
+                ['business_id', 'start_date', 'end_date'],
+                'idx_ud_business_contract'
+            );
+
+            $table->index(
+                ['business_id', 'party_id'],
+                'idx_ud_business_party'
+            );
         });
     }
 

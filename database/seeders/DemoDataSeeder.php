@@ -4,12 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\Holiday;
+use App\Models\InternalUser;
 use App\Models\Party;
 use App\Models\Project;
 use App\Models\Timesheet;
 use App\Models\TimesheetDefault;
 use App\Models\TimesheetEntry;
 use App\Models\User;
+use App\Models\UserDetail;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -259,6 +261,81 @@ class DemoDataSeeder extends Seeder
             'code' => 'MOB-001',
         ]);
 
+        // ================================
+        // Create Internal Users
+        // ================================
+        $accountManager = InternalUser::create([
+            'business_id' => $business->id,
+            'name' => 'Alice Account',
+            'email' => 'am@demotech.com',
+            'phone' => '+1999000001',
+            'role' => 'ac_manager',
+            'rate' => 10, // 10%
+            'commission_on' => 'gross-margin',
+            'rate_type' => 'percentage',
+            'recuesive' => false,
+        ]);
+
+        $bdManager = InternalUser::create([
+            'business_id' => $business->id,
+            'name' => 'Brian BDM',
+            'email' => 'bdm@demotech.com',
+            'phone' => '+1999000002',
+            'role' => 'bd_manager',
+            'rate' => 5, // 5%
+            'commission_on' => 'gross-margin',
+            'rate_type' => 'percentage',
+            'recuesive' => false,
+        ]);
+
+        $recruiter = InternalUser::create([
+            'business_id' => $business->id,
+            'name' => 'Rachel Recruiter',
+            'email' => 'recruiter@demotech.com',
+            'phone' => '+1999000003',
+            'role' => 'recruiter',
+            'rate' => 8, // 8%
+            'commission_on' => 'net-margin',
+            'rate_type' => 'percentage',
+            'recuesive' => false,
+        ]);
+
+        // ================================
+        // Create User Detail for Staff User
+        // ================================
+        $userDetailStaff = UserDetail::create([
+            'business_id' => $business->id,
+            'user_id' => $staff->id,
+
+            'party_id' => $client1->id, // client assignment
+
+            // Rates
+            'client_rate' => 100,        // client pays
+            'consultant_rate' => 60,     // staff gets
+
+            // Account Manager Commission
+            'account_manager_id' => $accountManager->id,
+            'account_manager_commission' => 10,
+            'account_manager_commission_rate_type' => 1,
+            'account_manager_recurssive' => false,
+
+            // Business Development Manager Commission
+            'business_development_manager_id' => $bdManager->id,
+            'business_development_manager_commission' => 5,
+            'business_development_manager_commission_rate_type' => 1,
+            'business_development_manager_recurssive' => false,
+
+            // Recruiter Commission
+            'recruiter_id' => $recruiter->id,
+            'recruiter_commission' => 8,
+            'recruiter_rate_type' => 1,
+            'recruiter_recurssive' => false,
+
+            // Contract
+            'start_date' => now()->subMonth(),
+            'active' => true,
+        ]);
+
         // Create Timesheet Defaults
         TimesheetDefault::create([
             'business_id' => $business->id,
@@ -272,6 +349,7 @@ class DemoDataSeeder extends Seeder
         $timesheet1 = Timesheet::create([
             'business_id' => $business->id,
             'user_id' => $staff->id,
+            'user_detail_id' => $userDetailStaff->id,
             'client_id' => $client1->id,
             'project_id' => $project1->id,
             'start_date' => now()->startOfWeek(),
@@ -298,6 +376,7 @@ class DemoDataSeeder extends Seeder
         $timesheet2 = Timesheet::create([
             'business_id' => $business->id,
             'user_id' => $regularUser->id,
+            'user_detail_id' => $userDetailStaff->id,
             'client_id' => $client2->id,
             'project_id' => $project2->id,
             'start_date' => now()->subWeek()->startOfWeek(),

@@ -18,11 +18,14 @@ return new class extends Migration
                 ->constrained('businesses')
                 ->cascadeOnDelete();
 
-            $table->date('holiday_date')->unique();
+            $table->date('holiday_date');
             $table->text('description')->nullable();
             $table->boolean('recurring')->default(false); // yearly recurring?
 
             $table->timestamps();
+
+            // ✅ Multi-tenant safe unique constraint
+            $table->unique(['business_id', 'holiday_date'], 'uniq_business_holiday');
         });
     }
 

@@ -18,6 +18,7 @@ return new class extends Migration
                 ->constrained('businesses')
                 ->cascadeOnDelete();
 
+            // null = business-level default
             $table->foreignId('user_id')
                 ->nullable()
                 ->constrained('users')
@@ -27,9 +28,13 @@ return new class extends Migration
             $table->decimal('default_extra_hours', 6, 2)->default(0);
             $table->decimal('default_vacation_hours', 6, 2)->default(0);
 
+            // explicit meaning
+            $table->boolean('is_business_default')->default(false);
+
             $table->timestamps();
 
-            $table->index('user_id');
+            // enforce one rule per scope
+            $table->unique(['business_id', 'user_id'], 'uniq_timesheet_defaults');
         });
     }
 

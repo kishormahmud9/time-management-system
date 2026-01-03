@@ -27,6 +27,18 @@ return new class extends Migration
             $table->tinyInteger('recuesive')->default(0);
             $table->enum('month', ['all_months', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'])->nullable();
             $table->timestamps();
+
+            // 🔐 multi-tenant uniqueness
+            $table->unique(
+                ['business_id', 'email'],
+                'uniq_internal_user_email_per_business'
+            );
+
+            // ⚡ performance indexes
+            $table->index('business_id');
+            $table->index(['business_id', 'role'], 'idx_internal_users_business_role');
+            $table->index(['business_id', 'phone'], 'idx_internal_users_business_phone');
+            $table->index(['business_id', 'recuesive'], 'idx_internal_users_recursive');
         });
     }
 
