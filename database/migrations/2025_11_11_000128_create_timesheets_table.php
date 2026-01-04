@@ -33,11 +33,6 @@ return new class extends Migration
                 ->constrained('parties')
                 ->nullOnDelete();
 
-            $table->foreignId('project_id')
-                ->nullable()
-                ->constrained('projects')
-                ->nullOnDelete();
-
             $table->foreignId('approved_by')
                 ->nullable()
                 ->constrained('users')

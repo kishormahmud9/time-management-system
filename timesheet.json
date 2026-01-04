@@ -1,0 +1,75 @@
+{
+  "info": {
+    "_postman_id": "9b0b9c7e-5a3e-4f1a-9b33-88f8e8a21abc",
+    "name": "Timesheet Management System - Timesheet Store",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Timesheet (FormData + File Upload)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "start_date", "value": "2026-01-01", "type": "text" },
+            { "key": "end_date", "value": "2026-01-07", "type": "text" },
+            { "key": "status", "value": "submitted", "type": "text" },
+            { "key": "remarks", "value": "Weekly timesheet submission", "type": "text" },
+
+            { "key": "user_id", "value": "5", "type": "text" },
+
+            { "key": "client_id", "value": "3", "type": "text" },
+
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            },
+
+            { "key": "entries[0][entry_date]", "value": "2026-01-01", "type": "text" },
+            { "key": "entries[0][daily_hours]", "value": "8", "type": "text" },
+            { "key": "entries[0][extra_hours]", "value": "2", "type": "text" },
+            { "key": "entries[0][vacation_hours]", "value": "0", "type": "text" },
+            { "key": "entries[0][note]", "value": "API development work", "type": "text" },
+
+            { "key": "entries[1][entry_date]", "value": "2026-01-02", "type": "text" },
+            { "key": "entries[1][daily_hours]", "value": "8", "type": "text" },
+            { "key": "entries[1][extra_hours]", "value": "0", "type": "text" },
+            { "key": "entries[1][vacation_hours]", "value": "0", "type": "text" },
+            { "key": "entries[1][note]", "value": "Bug fixing & testing", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/timesheets",
+          "host": ["{{base_url}}"],
+          "path": ["api", "timesheets"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-domain.com",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "PASTE_YOUR_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

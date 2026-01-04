@@ -180,6 +180,7 @@ class TimesheetManageController extends Controller
 
     public function store(Request $request)
     {
+        dd("here the reponse in timesheet store");
         $actor = Auth::user();
         if (!$actor) {
             return response()->json([
@@ -201,8 +202,12 @@ class TimesheetManageController extends Controller
             'remarks' => 'nullable|string|max:1000',
 
             'entries' => 'required|array|min:1',
-            'entries.*.entry_date' =>
-            'required|date|between:' . $request->start_date . ',' . $request->end_date,
+            'entries.*.entry_date' => [
+                'required',
+                'date',
+                'after_or_equal:start_date',
+                'before_or_equal:end_date',
+            ],
             'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
             'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
             'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
