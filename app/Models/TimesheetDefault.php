@@ -7,19 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TimesheetDefault extends Model
 {
-    protected $fillable = [
-        'business_id',
-        'user_id',
-        'default_daily_hours',
-        'default_extra_hours',
-        'default_vacation_hours',
-    ];
-
-    protected $casts = [
-        'default_daily_hours' => 'decimal:2',
-        'default_extra_hours' => 'decimal:2',
-        'default_vacation_hours' => 'decimal:2',
-    ];
+    protected $guarded = [];
 
     // Relationships
     public function business(): BelongsTo
@@ -46,7 +34,7 @@ class TimesheetDefault extends Model
             $userDefault = self::where('business_id', $businessId)
                 ->where('user_id', $userId)
                 ->first();
-            
+
             if ($userDefault) {
                 return $userDefault;
             }

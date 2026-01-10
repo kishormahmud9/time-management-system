@@ -19,7 +19,7 @@ return new class extends Migration
             // =========================
             $table->float('account_manager_commission');
             $table->string('account_manager_commission_rate_count_on')->nullable();
-            $table->integer('account_manager_commission_rate_type');
+            $table->enum('account_manager_commission_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('account_manager_recurssive')->default(false);
             $table->integer('account_manager_recurssive_month')->nullable();
             $table->foreignId('account_manager_id')
@@ -30,7 +30,7 @@ return new class extends Migration
             // =========================
             $table->float('business_development_manager_commission');
             $table->string('business_development_manager_commission_rate_count_on')->nullable();
-            $table->integer('business_development_manager_commission_rate_type');
+            $table->enum('business_development_manager_commission_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('business_development_manager_recurssive')->default(false);
             $table->integer('business_development_manager_recurssive_month')->nullable();
             $table->foreignId('business_development_manager_id')
@@ -41,7 +41,7 @@ return new class extends Migration
             // =========================
             $table->float('recruiter_commission');
             $table->string('recruiter_rate_count_on')->nullable();
-            $table->integer('recruiter_rate_type');
+            $table->enum('recruiter_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('recruiter_recurssive')->default(false);
             $table->integer('recruiter_recurssive_month')->nullable();
             $table->foreignId('recruiter_id')

@@ -40,7 +40,7 @@ return new class extends Migration
 
             // columns
             $table->date('start_date');
-            $table->date('end_date');
+            $table->date('end_date')->nullable();
 
             $table->decimal('gross_margin', 10, 2)->nullable();
             $table->decimal('net_margin', 10, 2)->nullable();

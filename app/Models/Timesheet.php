@@ -8,29 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Timesheet extends Model
 {
-    protected $fillable = [
-        'business_id',
-        'user_id',
-        'client_id',
-        'project_id',
-        'approved_by',
-        'start_date',
-        'end_date',
-        'status',
-        'total_hours',
-        'remarks',
-        'attachment_path',
-        'submitted_at',
-        'approved_at',
-    ];
-
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'total_hours' => 'decimal:2',
-        'submitted_at' => 'datetime',
-        'approved_at' => 'datetime',
-    ];
+    protected $guarded = [];
 
     // Relationships
     public function business(): BelongsTo

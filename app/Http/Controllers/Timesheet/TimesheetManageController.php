@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Models\UserDetail;
 use App\Notifications\TimesheetSubmitted;
 use App\Notifications\TimesheetStatusUpdated;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -39,330 +40,275 @@ class TimesheetManageController extends Controller
     /**
      * Create new timesheet
      */
-    // public function store(Request $request)
-    // {
-    //     try {
-    //         $actor = Auth::user();
-    //         if (!$actor) {
-    //             return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
-    //         }
-
-    //         // Validation
-    //         $validator = Validator::make($request->all(), [
-    //             'user_id' => 'required|integer|exists:users,id',
-    //             'client_id' => 'nullable|integer|exists:parties,id',
-    //             'project_id' => 'nullable|integer|exists:projects,id',
-    //             'start_date' => 'required|date',
-    //             'end_date' => 'required|date|after_or_equal:start_date',
-    //             'status' => 'nullable|in:draft,submitted,approved,rejected',
-    //             'remarks' => 'nullable|string|max:1000',
-    //             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls|max:5120',
-    //             'entries' => 'nullable|array',
-    //             'entries.*.entry_date' => 'required|date|between:' . $request->start_date . ',' . $request->end_date,
-    //             'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
-    //             'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
-    //             'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
-    //             'entries.*.note' => 'nullable|string|max:500',
-    //             'email' => 'nullable|array',
-    //             'email.to' => 'required_with:email|email',
-    //             'email.subject' => 'nullable|string',
-    //             'email.body' => 'nullable|string',
-    //         ]);
-
-    //         if ($validator->fails()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'errors' => $validator->errors()
-    //             ], 422);
-    //         }
-
-
-    //         if ($request->client_id) {
-    //             $client = Party::find($request->client_id);
-    //             if (!$client || $client->business_id !== $actor->business_id) {
-    //                 return response()->json(['success' => false, 'message' => 'Invalid Client ID'], 422);
-    //             }
-    //         }
-
-    //         // Validate Holidays
-    //         if ($request->has('entries')) {
-    //             $holidayDates = Holiday::where('business_id', $actor->business_id)
-    //                 ->whereIn('date', array_column($request->entries, 'entry_date'))
-    //                 ->pluck('date')
-    //                 ->toArray();
-
-    //             if (!empty($holidayDates)) {
-    //                 return response()->json([
-    //                     'success' => false, 
-    //                     'message' => 'Cannot submit timesheet for holiday dates: ' . implode(', ', $holidayDates)
-    //                 ], 422);
-    //             }
-    //         }
-
-    //         DB::beginTransaction();
-
-    //         // Handle file upload
-    //         $attachmentPath = null;
-    //         if ($request->hasFile('attachment')) {
-    //             $file = $request->file('attachment');
-    //             $fileName = time() . '_' . $file->getClientOriginalName();
-    //             $file->storeAs('timesheets/attachments', $fileName, 'public');
-    //             $attachmentPath = 'timesheets/attachments/' . $fileName;
-    //         }
-
-    //         // Create timesheet
-    //         $timesheet = Timesheet::create([
-    //             'business_id' => $actor->business_id,
-    //             'user_id' => $request->user_id,
-    //             'client_id' => $request->client_id,
-    //             'project_id' => $request->project_id,
-    //             'start_date' => $request->start_date,
-    //             'end_date' => $request->end_date,
-    //             'status' => $request->status ?? 'draft',
-    //             'remarks' => $request->remarks,
-    //             'attachment_path' => $attachmentPath,
-    //             'total_hours' => 0,
-    //         ]);
-
-    //         // Create entries if provided
-    //         if ($request->has('entries') && is_array($request->entries)) {
-    //             foreach ($request->entries as $entryData) {
-    //                 $timesheet->entries()->create([
-    //                     'business_id' => $actor->business_id,
-    //                     'entry_date' => $entryData['entry_date'],
-    //                     'daily_hours' => $entryData['daily_hours'] ?? 0,
-    //                     'extra_hours' => $entryData['extra_hours'] ?? 0,
-    //                     'vacation_hours' => $entryData['vacation_hours'] ?? 0,
-    //                     'note' => $entryData['note'] ?? null,
-    //                 ]);
-    //             }
-
-    //             // Update total hours
-    //             $timesheet->updateTotalHours();
-    //         }
-
-    //         DB::commit();
-
-    //         // Send email notification if provided
-    //         if ($request->has('email') && $request->email['to']) {
-    //             try {
-    //                 Mail::to($request->email['to'])->send(
-    //                     new TimesheetSubmittedEmail($timesheet, $request->email)
-    //                 );
-    //             } catch (Exception $mailException) {
-    //                 \Log::error('Failed to send timesheet email: ' . $mailException->getMessage());
-    //             }
-    //         }
-
-    //         // Notify Approver if submitted
-    //         if ($timesheet->status === 'submitted') {
-    //             // Find approvers (e.g., Business Admin)
-    //             $approvers = User::role('Business Admin')->where('business_id', $actor->business_id)->get();
-    //             Notification::send($approvers, new TimesheetSubmitted($timesheet));
-    //         }
-
-    //         $this->logActivity('create_timesheet');
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Timesheet created successfully',
-    //             'data' => $timesheet->load('entries')
-    //         ], 201);
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Failed to create timesheet',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
     public function store(Request $request)
     {
-        dd("here the reponse in timesheet store");
         $actor = Auth::user();
+
         if (!$actor) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated'
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Validation (role based)
-    |--------------------------------------------------------------------------
-    */
-        $rules = [
-            'client_id' => 'nullable|exists:parties,id',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'nullable|in:draft,submitted,approved,rejected',
-            'remarks' => 'nullable|string|max:1000',
-
-            'entries' => 'required|array|min:1',
-            'entries.*.entry_date' => [
-                'required',
-                'date',
-                'after_or_equal:start_date',
-                'before_or_equal:end_date',
-            ],
-            'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
-            'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
-            'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
-            'entries.*.note' => 'nullable|string|max:500',
-            'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5120',
-        ];
-
-        // 🔐 Role rule
         if ($actor->hasRole('User')) {
-            // normal user → cannot pass user_id
-            $rules['user_id'] = 'nullable|prohibited';
+            $rules['user_id'] = 'prohibited';
         } else {
-            // admin / staff → must pass user_id
             $rules['user_id'] = 'required|exists:users,id';
         }
 
-        $validated = Validator::make($request->all(), $rules)->validate();
 
-        /*
-    |--------------------------------------------------------------------------
-    | Resolve target user
-    |--------------------------------------------------------------------------
-    */
-        $targetUserId = $actor->hasRole('User')
-            ? $actor->id
-            : $validated['user_id'];
+        $targetUserId = $actor->hasRole('User') ? $actor->id : $request->user_id;
 
-        /*
-    |--------------------------------------------------------------------------
-    | Resolve active UserDetail (MANDATORY)
-    |--------------------------------------------------------------------------
-    */
-        $userDetail = UserDetail::where('user_id', $targetUserId)
-            ->where('business_id', $actor->business_id)
-            ->where('active', true)
-            ->first();
+        $userDetail = UserDetail::where([
+            'user_id' => $targetUserId,
+            'business_id' => $actor->business_id,
+        ])->firstOrFail();
 
-        if (!$userDetail) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Active user detail not found for this user'
-            ], 422);
-        }
+        return DB::transaction(function () use ($request, $actor, $targetUserId, $userDetail) {
 
-        /*
-    |--------------------------------------------------------------------------
-    | Validate client belongs to same business
-    |--------------------------------------------------------------------------
-    */
-        if (!empty($validated['client_id'])) {
-            $client = Party::where('id', $validated['client_id'])
-                ->where('business_id', $actor->business_id)
-                ->first();
-
-            if (!$client) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid client for this business'
-                ], 422);
-            }
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Holiday validation
-    |--------------------------------------------------------------------------
-    */
-        $entryDates = collect($validated['entries'])->pluck('entry_date');
-
-        $holidayDates = Holiday::where('business_id', $actor->business_id)
-            ->whereIn('holiday_date', $entryDates)
-            ->pluck('holiday_date')
-            ->toArray();
-
-        if (!empty($holidayDates)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Timesheet contains holiday dates: ' . implode(', ', $holidayDates)
-            ], 422);
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | Store Timesheet + Entries
-    |--------------------------------------------------------------------------
-    */
-        DB::beginTransaction();
-
-        try {
-            // Create timesheet
             $timesheet = Timesheet::create([
                 'business_id' => $actor->business_id,
                 'user_id' => $targetUserId,
                 'user_detail_id' => $userDetail->id,
-                'client_id' => $validated['client_id'] ?? null,
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'],
-                'status' => $validated['status'] ?? 'draft',
-                'remarks' => $validated['remarks'] ?? null,
-                'submitted_at' => ($validated['status'] ?? 'draft') === 'submitted' ? now() : null,
+                'client_id' => $request->client_id,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'status' => $request->status ?? 'draft',
+                'remarks' => $request->remarks ?? null,
+                'submitted_at' => ($request->status ?? 'draft') === 'submitted' ? now() : null,
                 'total_hours' => 0,
             ]);
 
             $totalHours = 0;
 
-            foreach ($validated['entries'] as $entry) {
-                $daily = $entry['daily_hours'];
-                $extra = $entry['extra_hours'] ?? 0;
-                $vacation = $entry['vacation_hours'] ?? 0;
+            foreach ($request->entries as $entry) {
+                $hours = ($entry['daily_hours'] ?? 0)
+                    + ($entry['extra_hours'] ?? 0)
+                    + ($entry['vacation_hours'] ?? 0);
 
-                $totalHours += ($daily + $extra + $vacation);
+                $totalHours += $hours;
 
                 $timesheet->entries()->create([
                     'business_id' => $actor->business_id,
                     'entry_date' => $entry['entry_date'],
-                    'daily_hours' => $daily,
-                    'extra_hours' => $extra,
-                    'vacation_hours' => $vacation,
+                    'daily_hours' => $entry['daily_hours'],
+                    'extra_hours' => $entry['extra_hours'] ?? 0,
+                    'vacation_hours' => $entry['vacation_hours'] ?? 0,
                     'note' => $entry['note'] ?? null,
-
-
-                    // rate snapshots (critical)
                     'client_rate_snapshot' => $userDetail->client_rate,
-                    'consultant_rate_snapshot' => $userDetail->consultant_rate,
                 ]);
             }
 
             $timesheet->update([
-                'total_hours' => $totalHours
+                'total_hours' => $totalHours,
+                'gross_margin' => $totalHours * $userDetail->client_rate,
+                'net_margin' => ($totalHours * $userDetail->client_rate) - ($totalHours * $userDetail->other_rate + $totalHours * $userDetail->w2) - ($totalHours * $userDetail->account_manager_commission)
             ]);
 
-            DB::commit();
 
-            // activity log
+            // $userDetail->update([
+            //     'last_timesheet_submitted_at' => Carbon::now(),
+            // ]);
+
             $this->logActivity('create_timesheet');
 
             return response()->json([
                 'success' => true,
-                'message' => 'Timesheet Created Successfully',
+                'message' => 'Timesheet created successfully',
                 'data' => $timesheet->load('entries')
             ], 201);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            Log::error('Timesheet store failed', [
-                'actor_id' => $actor->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create timesheet'
-            ], 500);
-        }
+        });
     }
+
+
+    // public function store(Request $request)
+    // {
+    //     // dd('Timesheet store payload', $request->all());
+    //     // Log::info('Timesheet store payload', $request->all());
+    //     $actor = Auth::user();
+    //     if (!$actor) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Unauthenticated'
+    //         ], 401);
+    //     }
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Validation (role based)
+    // |--------------------------------------------------------------------------
+    // */
+    //     $rules = [
+    //         'client_id' => 'nullable|exists:parties,id',
+    //         'start_date' => 'required|date',
+    //         'end_date' => 'required|date|after_or_equal:start_date',
+    //         'status' => 'nullable|in:draft,submitted,approved,rejected',
+    //         'remarks' => 'nullable|string|max:1000',
+
+    //         'entries' => 'required|array|min:1',
+    //         'entries.*.entry_date' => [
+    //             'required',
+    //             'date',
+    //             'after_or_equal:start_date',
+    //             'before_or_equal:end_date',
+    //         ],
+    //         'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
+    //         'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
+    //         'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
+    //         'entries.*.note' => 'nullable|string|max:500',
+    //         'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5120',
+    //     ];
+    //     // dd("here the reponse in timesheet store");
+
+    //     // 🔐 Role rule
+    //     if ($actor->hasRole('User')) {
+    //         // normal user → cannot pass user_id
+    //         $rules['user_id'] = 'nullable|prohibited';
+    //     } else {
+    //         // admin / staff → must pass user_id
+    //         $rules['user_id'] = 'required|exists:users,id';
+    //     }
+
+    //     $validated = Validator::make($request->all(), $rules)->validate();
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Resolve target user
+    // |--------------------------------------------------------------------------
+    // */
+    //     $targetUserId = $actor->hasRole('User')
+    //         ? $actor->id
+    //         : $validated['user_id'];
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Resolve active UserDetail (MANDATORY)
+    // |--------------------------------------------------------------------------
+    // */
+    //     $userDetail = UserDetail::where('user_id', $targetUserId)
+    //         ->where('business_id', $actor->business_id)
+    //         ->where('active', true)
+    //         ->first();
+
+    //     if (!$userDetail) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Active user detail not found for this user'
+    //         ], 422);
+    //     }
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Validate client belongs to same business
+    // |--------------------------------------------------------------------------
+    // */
+    //     if (!empty($validated['client_id'])) {
+    //         $client = Party::where('id', $validated['client_id'])
+    //             ->where('business_id', $actor->business_id)
+    //             ->first();
+
+    //         if (!$client) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Invalid client for this business'
+    //             ], 422);
+    //         }
+    //     }
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Holiday validation
+    // |--------------------------------------------------------------------------
+    // */
+    //     $entryDates = collect($validated['entries'])->pluck('entry_date');
+
+    //     $holidayDates = Holiday::where('business_id', $actor->business_id)
+    //         ->whereIn('holiday_date', $entryDates)
+    //         ->pluck('holiday_date')
+    //         ->toArray();
+
+    //     if (!empty($holidayDates)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Timesheet contains holiday dates: ' . implode(', ', $holidayDates)
+    //         ], 422);
+    //     }
+
+    //     /*
+    // |--------------------------------------------------------------------------
+    // | Store Timesheet + Entries
+    // |--------------------------------------------------------------------------
+    // */
+
+
+
+    //     try {
+    //         DB::beginTransaction();
+    //         // dd("here the reponse in timesheet store");
+    //         // Create timesheet
+    //         $timesheet = Timesheet::create([
+    //             'business_id' => $actor->business_id,
+    //             'user_id' => $targetUserId,
+    //             'user_detail_id' => $userDetail->id,
+    //             'client_id' => $validated['client_id'] ?? null,
+    //             'start_date' => $validated['start_date'],
+    //             'end_date' => $validated['end_date'],
+    //             'status' => $validated['status'] ?? 'draft',
+    //             'remarks' => $validated['remarks'] ?? null,
+    //             'submitted_at' => ($validated['status'] ?? 'draft') === 'submitted' ? now() : null,
+    //             'total_hours' => 0,
+    //         ]);
+
+    //         $totalHours = 0;
+
+    //         foreach ($validated['entries'] as $entry) {
+    //             $daily = $entry['daily_hours'];
+    //             $extra = $entry['extra_hours'] ?? 0;
+    //             $vacation = $entry['vacation_hours'] ?? 0;
+
+    //             $totalHours += ($daily + $extra + $vacation);
+
+    //             $timesheet->entries()->create([
+    //                 'business_id' => $actor->business_id,
+    //                 'entry_date' => $entry['entry_date'],
+    //                 'daily_hours' => $daily,
+    //                 'extra_hours' => $extra,
+    //                 'vacation_hours' => $vacation,
+    //                 'note' => $entry['note'] ?? null,
+
+
+    //                 // rate snapshots (critical)
+    //                 'client_rate_snapshot' => $userDetail->client_rate,
+    //                 'consultant_rate_snapshot' => $userDetail->consultant_rate,
+    //             ]);
+    //         }
+
+    //         $timesheet->update([
+    //             'total_hours' => $totalHours
+    //         ]);
+
+    //         DB::commit();
+
+    //         // activity log
+    //         $this->logActivity('create_timesheet');
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Timesheet Created Successfully',
+    //             'data' => $timesheet->load('entries')
+    //         ], 201);
+    //     } catch (\Throwable $e) {
+    //         DB::rollBack();
+
+    //         Log::error('Timesheet store failed', [
+    //             'actor_id' => $actor->id,
+    //             'error' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to create timesheet'
+    //         ], 500);
+    //     }
+    // }
 
     /**
      * Get all timesheets
