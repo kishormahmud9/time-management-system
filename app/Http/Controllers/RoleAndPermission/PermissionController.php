@@ -67,6 +67,48 @@ class PermissionController extends Controller
         }
     }
 
+    // Get supervisor permissions
+    public function supervisorPermissions()
+    {
+        try {
+            $permissions = Permission::whereHas('roles', function ($q) {
+                $q->where('name', 'Staff');
+            })->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $permissions
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch permissions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Get user permissions
+    public function userPermissions()
+    {
+        try {
+            $permissions = Permission::whereHas('roles', function ($q) {
+                $q->where('name', 'User');
+            })->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $permissions
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch permissions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Get single permission
     public function viewDetails($id)
     {

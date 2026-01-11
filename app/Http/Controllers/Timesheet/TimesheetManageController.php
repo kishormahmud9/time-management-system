@@ -99,7 +99,7 @@ class TimesheetManageController extends Controller
             ]);
 
 
-            
+
 
 
 
@@ -260,6 +260,8 @@ class TimesheetManageController extends Controller
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'remarks' => $request->remarks,
+                'mail_template_id' => $request->mail_template_id ?? null,
+                'send_to' => $request->send_to ?? null,
             ]);
 
             // Update entries if provided

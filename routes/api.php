@@ -50,9 +50,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/timesheet', 'store');
         Route::get('/timesheet', 'view');
         Route::get('/timesheet/{id}', 'viewDetails');
-        Route::put('/timesheet/{id}', 'update');
-        Route::delete('/timesheet/{id}', 'delete');
-        Route::patch('/timesheet/{id}', 'statusUpdate');
+        // Route::put('/timesheet/{id}', 'update');
+        // Route::delete('/timesheet/{id}', 'delete');
+        // Route::patch('/timesheet/{id}', 'statusUpdate');
         Route::get('/timesheet-defaults', 'getDefaults');
     });
 
@@ -74,6 +74,8 @@ Route::middleware('auth:api')->group(function () {
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
         Route::get('/permissions', 'view');
+        Route::get('/supervisor-permissions', 'supervisorPermissions');
+        Route::get('/user-permissions', 'userPermissions');
         Route::get('/permission/{id}', 'viewDetails');
     });
 
@@ -186,13 +188,9 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
     });
 
     //**** Timesheet Related Route (All Authenticated Users) ****//
-    // Route::controller(TimesheetManageController::class)->group(function () {
-    //     Route::post('/timesheet', 'store');
-    //     Route::get('/timesheet', 'view');
-    //     Route::get('/timesheet/{id}', 'viewDetails');
-    //     Route::put('/timesheet/{id}', 'update');
-    //     Route::delete('/timesheet/{id}', 'delete');
-    //     Route::patch('/timesheet/{id}', 'statusUpdate');
-    //     Route::get('/timesheet-defaults', 'getDefaults');
-    // });
+    Route::controller(TimesheetManageController::class)->group(function () {
+        Route::put('/timesheet/{id}', 'update');
+        Route::delete('/timesheet/{id}', 'delete');
+        Route::patch('/timesheet/{id}', 'statusUpdate');
+    });
 });
