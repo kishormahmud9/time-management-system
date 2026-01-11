@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Timesheet;
 
 use App\Http\Controllers\Controller;
-use App\Mail\TimesheetSubmittedEmail;
 use App\Models\Timesheet;
-use App\Models\TimesheetEntry;
 use App\Models\TimesheetDefault;
 use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
@@ -13,17 +11,11 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Project;
-use App\Models\Party;
-use App\Models\Holiday;
 use App\Models\User;
 use App\Models\UserDetail;
 use App\Notifications\TimesheetSubmitted;
 use App\Notifications\TimesheetStatusUpdated;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class TimesheetManageController extends Controller
@@ -73,6 +65,8 @@ class TimesheetManageController extends Controller
                 'end_date' => $request->end_date,
                 'status' => $request->status ?? 'draft',
                 'remarks' => $request->remarks ?? null,
+                'mail_template_id' => $request->mail_template_id ?? null,
+                'send_to' => $request->send_to ?? null,
                 'submitted_at' => ($request->status ?? 'draft') === 'submitted' ? now() : null,
                 'total_hours' => 0,
             ]);
@@ -97,9 +91,6 @@ class TimesheetManageController extends Controller
                 ]);
             }
 
-            $grossMargin = $totalHours * $userDetail->client_rate;
-            $expanse = $userDetail->w2 > 0 ?  ($totalHours * $userDetail->other_rate) + ($totalHours * $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax) / 100) : ($totalHours * $userDetail->other_rate) + ($totalHours * $userDetail->c2c_or_other);
-            $internalExpanse = $totalHours * $userDetail->account_manager_commission + $totalHours * $userDetail->business_development_manager_commission + $totalHours * $userDetail->recruiter_commission;
 
             $userDetail->update([
                 'account_manager_commission_rate_count_on' => $totalHours * $userDetail->account_manager_commission,
@@ -107,16 +98,10 @@ class TimesheetManageController extends Controller
                 'recruiter_rate_count_on' => $totalHours * $userDetail->recruiter_commission,
             ]);
 
-            $timesheet->update([
-                'total_hours' => $totalHours,
-                'gross_margin' => $grossMargin,
-                'net_margin' => $grossMargin - $expanse - $internalExpanse
-            ]);
+
+            
 
 
-            // $userDetail->update([
-            //     'last_timesheet_submitted_at' => Carbon::now(),
-            // ]);
 
             $this->logActivity('create_timesheet');
 
@@ -129,196 +114,6 @@ class TimesheetManageController extends Controller
     }
 
 
-    // public function store(Request $request)
-    // {
-    //     // dd('Timesheet store payload', $request->all());
-    //     // Log::info('Timesheet store payload', $request->all());
-    //     $actor = Auth::user();
-    //     if (!$actor) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Unauthenticated'
-    //         ], 401);
-    //     }
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Validation (role based)
-    // |--------------------------------------------------------------------------
-    // */
-    //     $rules = [
-    //         'client_id' => 'nullable|exists:parties,id',
-    //         'start_date' => 'required|date',
-    //         'end_date' => 'required|date|after_or_equal:start_date',
-    //         'status' => 'nullable|in:draft,submitted,approved,rejected',
-    //         'remarks' => 'nullable|string|max:1000',
-
-    //         'entries' => 'required|array|min:1',
-    //         'entries.*.entry_date' => [
-    //             'required',
-    //             'date',
-    //             'after_or_equal:start_date',
-    //             'before_or_equal:end_date',
-    //         ],
-    //         'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
-    //         'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
-    //         'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
-    //         'entries.*.note' => 'nullable|string|max:500',
-    //         'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5120',
-    //     ];
-    //     // dd("here the reponse in timesheet store");
-
-    //     // 🔐 Role rule
-    //     if ($actor->hasRole('User')) {
-    //         // normal user → cannot pass user_id
-    //         $rules['user_id'] = 'nullable|prohibited';
-    //     } else {
-    //         // admin / staff → must pass user_id
-    //         $rules['user_id'] = 'required|exists:users,id';
-    //     }
-
-    //     $validated = Validator::make($request->all(), $rules)->validate();
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Resolve target user
-    // |--------------------------------------------------------------------------
-    // */
-    //     $targetUserId = $actor->hasRole('User')
-    //         ? $actor->id
-    //         : $validated['user_id'];
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Resolve active UserDetail (MANDATORY)
-    // |--------------------------------------------------------------------------
-    // */
-    //     $userDetail = UserDetail::where('user_id', $targetUserId)
-    //         ->where('business_id', $actor->business_id)
-    //         ->where('active', true)
-    //         ->first();
-
-    //     if (!$userDetail) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Active user detail not found for this user'
-    //         ], 422);
-    //     }
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Validate client belongs to same business
-    // |--------------------------------------------------------------------------
-    // */
-    //     if (!empty($validated['client_id'])) {
-    //         $client = Party::where('id', $validated['client_id'])
-    //             ->where('business_id', $actor->business_id)
-    //             ->first();
-
-    //         if (!$client) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Invalid client for this business'
-    //             ], 422);
-    //         }
-    //     }
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Holiday validation
-    // |--------------------------------------------------------------------------
-    // */
-    //     $entryDates = collect($validated['entries'])->pluck('entry_date');
-
-    //     $holidayDates = Holiday::where('business_id', $actor->business_id)
-    //         ->whereIn('holiday_date', $entryDates)
-    //         ->pluck('holiday_date')
-    //         ->toArray();
-
-    //     if (!empty($holidayDates)) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Timesheet contains holiday dates: ' . implode(', ', $holidayDates)
-    //         ], 422);
-    //     }
-
-    //     /*
-    // |--------------------------------------------------------------------------
-    // | Store Timesheet + Entries
-    // |--------------------------------------------------------------------------
-    // */
-
-
-
-    //     try {
-    //         DB::beginTransaction();
-    //         // dd("here the reponse in timesheet store");
-    //         // Create timesheet
-    //         $timesheet = Timesheet::create([
-    //             'business_id' => $actor->business_id,
-    //             'user_id' => $targetUserId,
-    //             'user_detail_id' => $userDetail->id,
-    //             'client_id' => $validated['client_id'] ?? null,
-    //             'start_date' => $validated['start_date'],
-    //             'end_date' => $validated['end_date'],
-    //             'status' => $validated['status'] ?? 'draft',
-    //             'remarks' => $validated['remarks'] ?? null,
-    //             'submitted_at' => ($validated['status'] ?? 'draft') === 'submitted' ? now() : null,
-    //             'total_hours' => 0,
-    //         ]);
-
-    //         $totalHours = 0;
-
-    //         foreach ($validated['entries'] as $entry) {
-    //             $daily = $entry['daily_hours'];
-    //             $extra = $entry['extra_hours'] ?? 0;
-    //             $vacation = $entry['vacation_hours'] ?? 0;
-
-    //             $totalHours += ($daily + $extra + $vacation);
-
-    //             $timesheet->entries()->create([
-    //                 'business_id' => $actor->business_id,
-    //                 'entry_date' => $entry['entry_date'],
-    //                 'daily_hours' => $daily,
-    //                 'extra_hours' => $extra,
-    //                 'vacation_hours' => $vacation,
-    //                 'note' => $entry['note'] ?? null,
-
-
-    //                 // rate snapshots (critical)
-    //                 'client_rate_snapshot' => $userDetail->client_rate,
-    //                 'consultant_rate_snapshot' => $userDetail->consultant_rate,
-    //             ]);
-    //         }
-
-    //         $timesheet->update([
-    //             'total_hours' => $totalHours
-    //         ]);
-
-    //         DB::commit();
-
-    //         // activity log
-    //         $this->logActivity('create_timesheet');
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Timesheet Created Successfully',
-    //             'data' => $timesheet->load('entries')
-    //         ], 201);
-    //     } catch (\Throwable $e) {
-    //         DB::rollBack();
-
-    //         Log::error('Timesheet store failed', [
-    //             'actor_id' => $actor->id,
-    //             'error' => $e->getMessage(),
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Failed to create timesheet'
-    //         ], 500);
-    //     }
-    // }
 
     /**
      * Get all timesheets
@@ -333,7 +128,7 @@ class TimesheetManageController extends Controller
 
             // Filter by business
             $query = $this->access->filterByBusiness($actor, Timesheet::class)
-                ->with(['user', 'client', 'project', 'approver', 'entries']);
+                ->with(['user', 'client', 'mail', 'approver', 'entries']);
 
             // Optional filters
             if ($request->has('status')) {
@@ -346,10 +141,6 @@ class TimesheetManageController extends Controller
 
             if ($request->has('client_id')) {
                 $query->where('client_id', $request->client_id);
-            }
-
-            if ($request->has('project_id')) {
-                $query->where('project_id', $request->project_id);
             }
 
             // Date range filter
@@ -387,7 +178,7 @@ class TimesheetManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $timesheet = Timesheet::with(['user', 'client', 'project', 'approver', 'entries'])
+            $timesheet = Timesheet::with(['user', 'client', 'mail', 'approver', 'entries'])
                 ->findOrFail($id);
 
             // Check access permission
@@ -433,17 +224,16 @@ class TimesheetManageController extends Controller
             }
 
             // Only allow editing draft timesheets
-            if (!$timesheet->isDraft()) {
+            if (!in_array($timesheet->status, ['draft', 'rejected'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only draft timesheets can be edited.'
+                    'message' => 'Only draft or rejected timesheets can be edited.'
                 ], 400);
             }
 
             // Validation
             $validator = Validator::make($request->all(), [
                 'client_id' => 'nullable|integer|exists:parties,id',
-                'project_id' => 'nullable|integer|exists:projects,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'remarks' => 'nullable|string|max:1000',
@@ -467,7 +257,6 @@ class TimesheetManageController extends Controller
             // Update timesheet
             $timesheet->update([
                 'client_id' => $request->client_id,
-                'project_id' => $request->project_id,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'remarks' => $request->remarks,
@@ -534,11 +323,12 @@ class TimesheetManageController extends Controller
                 ], 403);
             }
 
-            // Only allow deleting draft timesheets
-            if (!$timesheet->isDraft()) {
+
+            // Only allow delete draft timesheets
+            if (!in_array($timesheet->status, ['draft', 'rejected'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only draft timesheets can be deleted.'
+                    'message' => 'Only draft or rejected timesheets can be deleted.'
                 ], 400);
             }
 
@@ -598,8 +388,23 @@ class TimesheetManageController extends Controller
             }
 
             DB::beginTransaction();
+            $userDetail = UserDetail::where([
+                'id' => $timesheet->user_detail_id,
+                'business_id' => $actor->business_id,
+            ])->firstOrFail();
 
-            $updateData = ['status' => $request->status];
+            $grossMargin = $timesheet->total_hours * $userDetail->client_rate;
+            $expanse = $userDetail->w2 > 0 ?  ($timesheet->total_hours * $userDetail->other_rate) + ($timesheet->total_hours * $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax) / 100) : ($timesheet->total_hours * $userDetail->other_rate) + ($timesheet->total_hours * $userDetail->c2c_or_other);
+            $internalExpanse = $timesheet->total_hours * $userDetail->account_manager_commission + $timesheet->total_hours * $userDetail->business_development_manager_commission + $timesheet->total_hours * $userDetail->recruiter_commission;
+
+
+            $updateData = [
+                'status' => $request->status,
+                'gross_margin' => $grossMargin,
+                'expanse' => $expanse,
+                'internal_expanse' => $internalExpanse,
+                'net_margin' => $grossMargin - $expanse - $internalExpanse,
+            ];
 
             // Set timestamps based on status
             if ($request->status === 'submitted') {

@@ -88,7 +88,6 @@ return new class extends Migration
             $table->boolean('active')->nullable();
             $table->string('address')->nullable();
             $table->string('invoice_to')->nullable();
-            $table->string('file_folder')->nullable();
 
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();

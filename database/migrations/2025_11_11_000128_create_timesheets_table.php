@@ -38,6 +38,13 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->foreignId('mail_template_id')
+                ->nullable()
+                ->constrained('email_templates')
+                ->nullOnDelete();
+
+            $table->string('send_to')->nullable();
+
             // columns
             $table->date('start_date');
             $table->date('end_date')->nullable();
@@ -45,9 +52,6 @@ return new class extends Migration
             $table->decimal('gross_margin', 10, 2)->nullable();
             $table->decimal('net_margin', 10, 2)->nullable();
 
-            $table->decimal('account_manager_commission_amount', 10, 2)->nullable();
-            $table->decimal('bdm_commission_amount', 10, 2)->nullable();
-            $table->decimal('recruiter_commission_amount', 10, 2)->nullable();
 
             $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])
                 ->default('draft');

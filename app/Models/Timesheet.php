@@ -26,14 +26,14 @@ class Timesheet extends Model
         return $this->belongsTo(Party::class, 'client_id');
     }
 
-    public function project(): BelongsTo
-    {
-        return $this->belongsTo(Project::class);
-    }
-
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function mail(): BelongsTo
+    {
+        return $this->belongsTo(EmailTemplate::class, 'mail_template_id');
     }
 
     public function entries(): HasMany
