@@ -97,10 +97,20 @@ class TimesheetManageController extends Controller
                 ]);
             }
 
+            $grossMargin = $totalHours * $userDetail->client_rate;
+            $expanse = $userDetail->w2 > 0 ?  ($totalHours * $userDetail->other_rate) + ($totalHours * $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax) / 100) : ($totalHours * $userDetail->other_rate) + ($totalHours * $userDetail->c2c_or_other);
+            $internalExpanse = $totalHours * $userDetail->account_manager_commission + $totalHours * $userDetail->business_development_manager_commission + $totalHours * $userDetail->recruiter_commission;
+
+            $userDetail->update([
+                'account_manager_commission_rate_count_on' => $totalHours * $userDetail->account_manager_commission,
+                'business_development_manager_commission_rate_count_on' => $totalHours * $userDetail->business_development_manager_commission,
+                'recruiter_rate_count_on' => $totalHours * $userDetail->recruiter_commission,
+            ]);
+
             $timesheet->update([
                 'total_hours' => $totalHours,
-                'gross_margin' => $totalHours * $userDetail->client_rate,
-                'net_margin' => ($totalHours * $userDetail->client_rate) - ($totalHours * $userDetail->other_rate + $totalHours * $userDetail->w2) - ($totalHours * $userDetail->account_manager_commission)
+                'gross_margin' => $grossMargin,
+                'net_margin' => $grossMargin - $expanse - $internalExpanse
             ]);
 
 
