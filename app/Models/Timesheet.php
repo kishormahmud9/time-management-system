@@ -25,6 +25,10 @@ class Timesheet extends Model
     {
         return $this->belongsTo(Party::class, 'client_id');
     }
+    public function userDetail(): BelongsTo
+    {
+        return $this->belongsTo(UserDetail::class, 'user_detail_id');
+    }
 
     public function approver(): BelongsTo
     {

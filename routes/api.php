@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Chart\ChartController;
 use App\Http\Controllers\Company\BusinessController;
 use App\Http\Controllers\User\InternalUserController;
 use App\Http\Controllers\Mail\EmailTemplateController;
@@ -43,6 +44,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/profile', 'view');
         Route::post('/profile-edit', 'edit');
         Route::post('/change-password', 'changePassword');
+        Route::post('/company-update', 'companyUpdate');
     });
 
     //**** Timesheet Related Route (All Authenticated Users) ****//
@@ -54,6 +56,13 @@ Route::middleware('auth:api')->group(function () {
         // Route::delete('/timesheet/{id}', 'delete');
         // Route::patch('/timesheet/{id}', 'statusUpdate');
         Route::get('/timesheet-defaults', 'getDefaults');
+        Route::get('/scheduler', 'scheduler');
+    });
+
+    //**** Chart/Analytics Related Route (All Authenticated Users) ****//
+    Route::controller(ChartController::class)->group(function () {
+        Route::get('/chart/summary', 'summary');
+        Route::get('/chart/trend', 'trend');
     });
 
 

@@ -17,7 +17,7 @@ return new class extends Migration
             // =========================
             // Account Manager
             // =========================
-            $table->float('account_manager_commission');
+            $table->float('account_manager_commission')->nullable()->default(0);
             $table->string('account_manager_commission_rate_count_on')->nullable();
             $table->enum('account_manager_commission_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('account_manager_recurssive')->default(false);
@@ -28,7 +28,7 @@ return new class extends Migration
             // =========================
             // Business Development Manager
             // =========================
-            $table->float('business_development_manager_commission');
+            $table->float('business_development_manager_commission')->nullable()->default(0);
             $table->string('business_development_manager_commission_rate_count_on')->nullable();
             $table->enum('business_development_manager_commission_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('business_development_manager_recurssive')->default(false);
@@ -39,7 +39,7 @@ return new class extends Migration
             // =========================
             // Recruiter
             // =========================
-            $table->float('recruiter_commission');
+            $table->float('recruiter_commission')->nullable()->default(0);
             $table->string('recruiter_rate_count_on')->nullable();
             $table->enum('recruiter_rate_type', ['fixed', 'percentage'])->default("percentage");
             $table->boolean('recruiter_recurssive')->default(false);
@@ -57,7 +57,7 @@ return new class extends Migration
             // =========================
             // Rates & Contract
             // =========================
-            $table->float('client_rate');
+            $table->float('client_rate')->nullable()->default(0);
             $table->float('consultant_rate')->nullable();
             $table->float('w2')->nullable();
             $table->float('c2c_or_other')->nullable();
@@ -93,7 +93,7 @@ return new class extends Migration
             $table->timestamps();
 
 
-            // ⚡ performance indexes
+            // performance indexes
             $table->index(['business_id', 'active'], 'idx_ud_business_active');
 
             $table->index(

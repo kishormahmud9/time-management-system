@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Profile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Business;
 use App\Traits\UserActivityTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -163,6 +164,65 @@ class ProfileController extends Controller
                 'success' => false,
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    // Company Update
+    public function companyUpdate(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                ], 401);
+            }
+
+            // ✅ Validation
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:500',
+            ]);
+
+            // ✅ Handle logo file upload
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('business/logos', 'public');
+                $validated['logo'] = $logoPath;
+            } else {
+                // Remove logo from update if no file uploaded
+                unset($validated['logo']);
+            }
+
+            Business::where('owner_id', $user->id)->update($validated);
+
+            $this->logActivity('update_company');
+            return response()->json([
+                'success' => true,
+                'message' => 'Company information updated successfully',
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (TransportExceptionInterface $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mail transport failed.',
+                'error' => $e->getMessage(),
+            ], 500);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

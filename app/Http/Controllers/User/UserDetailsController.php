@@ -38,12 +38,7 @@ class UserDetailsController extends Controller
             'user_id' => [
                 'required',
                 'exists:users,id',
-                Rule::unique('user_details')
-                    ->where(
-                        fn($q) =>
-                        $q->where('business_id', $request->business_id)
-                            ->where('active', true)
-                    ),
+                // Rule::unique check removed to allow updating existing skeleton record
             ],
 
             'party_id'    => 'nullable|exists:parties,id',
@@ -111,49 +106,54 @@ class UserDetailsController extends Controller
 
         DB::beginTransaction();
         try {
-            $userDetail = UserDetail::create([
-                'user_id' => $request->user_id,
-                'business_id' => $actor->business_id,
-                'party_id' => $request->party_id,
+            // Find existing or create new
+            $userDetail = UserDetail::updateOrCreate(
+                [
+                    'user_id' => $request->user_id,
+                    'business_id' => $actor->business_id
+                ],
+                [
+                    'party_id' => $request->party_id,
 
-                // Rates
-                'client_rate' => $request->client_rate,
-                'consultant_rate' => $request->consultant_rate,
+                    // Rates
+                    'client_rate' => $request->client_rate,
+                    'consultant_rate' => $request->consultant_rate,
 
-                // Account Manager
-                'account_manager_commission' => $request->account_manager_commission ?? 0,
-                'account_manager_commission_rate_count_on' => $request->account_manager_commission_rate_count_on,
-                'account_manager_commission_rate_type' => $request->account_manager_commission_rate_type ?? 1,
-                'account_manager_recurssive' => $request->account_manager_recurssive ?? false,
-                'account_manager_recurssive_month' => $request->account_manager_recurssive_month,
-                'account_manager_id' => $request->account_manager_id,
+                    // Account Manager
+                    'account_manager_commission' => $request->account_manager_commission ?? 0,
+                    'account_manager_commission_rate_count_on' => $request->account_manager_commission_rate_count_on,
+                    'account_manager_commission_rate_type' => $request->account_manager_commission_rate_type ?? 1,
+                    'account_manager_recurssive' => $request->account_manager_recurssive ?? false,
+                    'account_manager_recurssive_month' => $request->account_manager_recurssive_month,
+                    'account_manager_id' => $request->account_manager_id,
 
-                // Business Development Manager
-                'business_development_manager_commission' => $request->business_development_manager_commission ?? 0,
-                'business_development_manager_commission_rate_count_on' => $request->business_development_manager_commission_rate_count_on,
-                'business_development_manager_commission_rate_type' => $request->business_development_manager_commission_rate_type ?? 1,
-                'business_development_manager_recurssive' => $request->business_development_manager_recurssive ?? false,
-                'business_development_manager_recurssive_month' => $request->business_development_manager_recurssive_month,
-                'business_development_manager_id' => $request->business_development_manager_id,
+                    // Business Development Manager
+                    'business_development_manager_commission' => $request->business_development_manager_commission ?? 0,
+                    'business_development_manager_commission_rate_count_on' => $request->business_development_manager_commission_rate_count_on,
+                    'business_development_manager_commission_rate_type' => $request->business_development_manager_commission_rate_type ?? 1,
+                    'business_development_manager_recurssive' => $request->business_development_manager_recurssive ?? false,
+                    'business_development_manager_recurssive_month' => $request->business_development_manager_recurssive_month,
+                    'business_development_manager_id' => $request->business_development_manager_id,
 
-                // Recruiter
-                'recruiter_commission' => $request->recruiter_commission ?? 0,
-                'recruiter_rate_count_on' => $request->recruiter_rate_count_on,
-                'recruiter_rate_type' => $request->recruiter_rate_type ?? 1,
-                'recruiter_recurssive' => $request->recruiter_recurssive ?? false,
-                'recruiter_recurssive_month' => $request->recruiter_recurssive_month,
-                'recruiter_id' => $request->recruiter_id,
+                    // Recruiter
+                    'recruiter_commission' => $request->recruiter_commission ?? 0,
+                    'recruiter_rate_count_on' => $request->recruiter_rate_count_on,
+                    'recruiter_rate_type' => $request->recruiter_rate_type ?? 1,
+                    'recruiter_recurssive' => $request->recruiter_recurssive ?? false,
+                    'recruiter_recurssive_month' => $request->recruiter_recurssive_month,
+                    'recruiter_id' => $request->recruiter_id,
 
-                // Contract
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                    // Contract
+                    'start_date' => $request->start_date,
+                    'end_date' => $request->end_date,
 
-                // Misc
-                'active' => true,
-                'address' => $request->address,
-                'invoice_to' => $request->invoice_to,
-                'file_folder' => $request->file_folder,
-            ]);
+                    // Misc
+                    'active' => true,
+                    'address' => $request->address,
+                    'invoice_to' => $request->invoice_to,
+                    'file_folder' => $request->file_folder,
+                ]
+            );
 
 
             DB::commit();
@@ -165,7 +165,7 @@ class UserDetailsController extends Controller
                 'success' => true,
                 'message' => 'User details stored successfully',
                 'data' => $userDetail,
-            ], 201);
+            ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
 

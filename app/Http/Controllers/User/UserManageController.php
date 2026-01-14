@@ -97,6 +97,13 @@ class UserManageController extends Controller
                 'status' => 'approved',
             ]);
 
+            // Create Skeleton User Detail
+            \App\Models\UserDetail::create([
+                'user_id' => $user->id,
+                'business_id' => $actor->business_id,
+                // other fields will be null/default as per new migration
+            ]);
+
             // Use RoleService to assign the role (this may throw exceptions on auth/validation)
             $assignedRoleName = $this->roleService->assignRole($actor, $user, (int)$request->role_id);
 

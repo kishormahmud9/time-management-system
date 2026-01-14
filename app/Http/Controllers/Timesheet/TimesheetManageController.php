@@ -52,7 +52,14 @@ class TimesheetManageController extends Controller
         $userDetail = UserDetail::where([
             'user_id' => $targetUserId,
             'business_id' => $actor->business_id,
-        ])->firstOrFail();
+        ])->first();
+
+        if (!$userDetail) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User details (rates) not set. Please contact your administrator to configure your billing rates.',
+            ], 422);
+        }
 
         return DB::transaction(function () use ($request, $actor, $targetUserId, $userDetail) {
 
@@ -97,10 +104,6 @@ class TimesheetManageController extends Controller
                 'business_development_manager_commission_rate_count_on' => $totalHours * $userDetail->business_development_manager_commission,
                 'recruiter_rate_count_on' => $totalHours * $userDetail->recruiter_commission,
             ]);
-
-
-
-
 
 
             $this->logActivity('create_timesheet');
@@ -488,6 +491,111 @@ class TimesheetManageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch defaults',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get scheduler - Timesheet entries filtered by date
+     */
+    public function scheduler(Request $request)
+    {
+        try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            // Build query for timesheet entries
+            $query = $this->access->filterByBusiness($actor, \App\Models\TimesheetEntry::class)
+                ->with(['timesheet' => function ($q) {
+                    $q->with(['client', 'user']);
+                }]);
+
+            // If user role is 'User', only show their own entries
+            if ($actor->hasRole('User')) {
+                $query->whereHas('timesheet', function ($q) use ($actor) {
+                    $q->where('user_id', $actor->id);
+                });
+            }
+
+            // Date filtering
+            if ($request->has('date')) {
+                // Filter by specific date
+                $query->whereDate('entry_date', $request->date);
+            } elseif ($request->has('start_date') && $request->has('end_date')) {
+                // Filter by date range
+                $query->whereBetween('entry_date', [$request->start_date, $request->end_date]);
+            } elseif ($request->has('month')) {
+                // Filter by month (format: YYYY-MM)
+                $month = $request->month;
+                $query->whereRaw('DATE_FORMAT(entry_date, "%Y-%m") = ?', [$month]);
+            }
+
+            // User filter (for admins/staff to view specific user's schedule)
+            if ($request->has('user_id') && !$actor->hasRole('User')) {
+                $query->whereHas('timesheet', function ($q) use ($request) {
+                    $q->where('user_id', $request->user_id);
+                });
+            }
+
+            // Get entries ordered by date
+            $entries = $query->orderBy('entry_date', 'asc')->get();
+
+            // Transform data and calculate totals
+            $totalDailyHours = 0;
+            $totalExtraHours = 0;
+            $totalVacationHours = 0;
+
+            $transformedEntries = $entries->map(function ($entry) use (&$totalDailyHours, &$totalExtraHours, &$totalVacationHours) {
+                $totalDailyHours += (float) $entry->daily_hours;
+                $totalExtraHours += (float) $entry->extra_hours;
+                $totalVacationHours += (float) $entry->vacation_hours;
+
+                return [
+                    'id' => $entry->id,
+                    'entry_date' => $entry->entry_date->format('Y-m-d'),
+                    'daily_hours' => $entry->daily_hours,
+                    'extra_hours' => $entry->extra_hours,
+                    'vacation_hours' => $entry->vacation_hours,
+                    'total_hours' => $entry->getTotalHours(),
+                    'all_hours' => $entry->getAllHours(),
+                    'note' => $entry->note,
+                    'is_weekend' => $entry->isWeekend(),
+                    'timesheet' => [
+                        'id' => $entry->timesheet->id,
+                        'status' => $entry->timesheet->status,
+                        'start_date' => $entry->timesheet->start_date,
+                        'end_date' => $entry->timesheet->end_date,
+                        'client' => $entry->timesheet->client ? [
+                            'id' => $entry->timesheet->client->id,
+                            'name' => $entry->timesheet->client->name,
+                        ] : null,
+                        'user' => [
+                            'id' => $entry->timesheet->user->id,
+                            'name' => $entry->timesheet->user->name,
+                            'email' => $entry->timesheet->user->email,
+                        ]
+                    ]
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $transformedEntries,
+                'summary' => [
+                    'total_daily_hours' => round($totalDailyHours, 2),
+                    'total_extra_hours' => round($totalExtraHours, 2),
+                    'total_vacation_hours' => round($totalVacationHours, 2),
+                    'total_hours' => round($totalDailyHours + $totalExtraHours + $totalVacationHours, 2),
+                    'total_entries' => $entries->count(),
+                ]
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch scheduler data',
                 'error' => $e->getMessage()
             ], 500);
         }
