@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'register', 'login', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'storage/*', 'register', 'login', 'sanctum/csrf-cookie'],
 
     /*
     |--------------------------------------------------------------------------
@@ -31,7 +31,7 @@ return [
     |
     */
 
-    'allowed_origins' => ['http://localhost:3000'],
+    'allowed_origins' => ['*'],
 
     // jodi 127.0.0.1 use koro tokhon etao add korte paro:
     // 'allowed_origins' => ['http://localhost:3000', 'http://127.0.0.1:3000'],
