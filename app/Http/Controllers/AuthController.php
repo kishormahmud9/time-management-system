@@ -30,7 +30,7 @@ class AuthController extends Controller
     {
         $this->businessService = $businessService;
     }
-    // ✅ Register
+    // Register
     public function register(Request $request)
     {
         try {
@@ -88,7 +88,7 @@ class AuthController extends Controller
     public function registerBusinessOwner(Request $request)
     {
         try {
-            // ✅ Validation
+            // Validation
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100',
                 'email' => 'required|string|email|max:100|unique:users',
@@ -134,7 +134,7 @@ class AuthController extends Controller
 
 
 
-    // ✅ Login
+    // Login
     public function login(Request $request)
     {
         try {
@@ -198,7 +198,7 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // 5) ✅ Role check (Spatie roles)
+            // 5) Role check (Spatie roles)
             $roles = $user->getRoleNames();
 
             if ($roles->isEmpty()) {
@@ -234,7 +234,7 @@ class AuthController extends Controller
 
 
 
-    // ✅ logged out user and destroy auth token
+    // logged out user and destroy auth token
     public function logout()
     {
         Auth::logout();
@@ -244,7 +244,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // ✅ Refresh Token
+    // Refresh Token
     public function refresh()
     {
         try {
@@ -259,7 +259,7 @@ class AuthController extends Controller
         }
     }
 
-    // ✅ Forget Password
+    // Forget Password
     public function forgetPassword(Request $request)
     {
         try {
@@ -321,17 +321,17 @@ class AuthController extends Controller
     }
 
 
-    // ✅ OTP Verification 
+    // OTP Verification 
     public function otpVerify(Request $request)
     {
         try {
-            // ✅ Validate user input
+            // Validate user input
             $request->validate([
                 'email' => 'required|email|exists:users,email',
                 'otp' => 'required|digits:6',
             ]);
 
-            // ✅ Fetch password reset record
+            // Fetch password reset record
             $record = DB::table('password_resets')->where('email', $request->email)->first();
 
             if (!$record) {
@@ -341,7 +341,7 @@ class AuthController extends Controller
                 ], 404);
             }
 
-            // ✅ Check OTP match
+            // Check OTP match
             if ($record->otp != $request->otp) {
                 return response()->json([
                     'success' => false,
@@ -349,7 +349,7 @@ class AuthController extends Controller
                 ], 400);
             }
 
-            // ✅ Check expiry
+            // Check expiry
             if (now()->greaterThan($record->expires_at)) {
                 return response()->json([
                     'success' => false,
@@ -357,7 +357,7 @@ class AuthController extends Controller
                 ], 400);
             }
 
-            // ✅ Mark as verified
+            // Mark as verified
             DB::table('password_resets')
                 ->where('email', $request->email)
                 ->update(['is_verified' => true]);
@@ -386,18 +386,18 @@ class AuthController extends Controller
         }
     }
 
-    // ✅ Reset Password
+    // Reset Password
     public function resetPassword(Request $request)
     {
         // dd($request->all());
         try {
-            // ✅ Validate request inputs
+            // Validate request inputs
             $request->validate([
                 'email' => 'required|email|exists:users,email',
                 'password' => 'required|min:8|confirmed'
             ]);
 
-            // ✅ Check if OTP verified
+            // Check if OTP verified
             $record = DB::table('password_resets')->where('email', $request->email)->first();
 
             if (!$record || empty($record->is_verified)) {
@@ -407,7 +407,7 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // ✅ Update user password
+            // Update user password
             $user = User::where('email', $request->email)->first();
 
             if (!$user) {
@@ -420,7 +420,7 @@ class AuthController extends Controller
             $user->password = Hash::make($request->password);
             $user->save();
 
-            // ✅ Delete password reset record
+            // Delete password reset record
             DB::table('password_resets')->where('email', $request->email)->delete();
 
             // Send password reset success email
