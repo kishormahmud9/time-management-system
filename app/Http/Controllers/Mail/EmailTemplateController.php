@@ -119,7 +119,7 @@ class EmailTemplateController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $template = EmailTemplate::findOrFail($id);
+            $template = EmailTemplate::with(['usedBy'])->findOrFail($id);
 
             // ✅ Check access permission
             if (!$this->access->canViewResource($actor, $template)) {

@@ -141,7 +141,8 @@ class InternalUserController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $internalUser = InternalUser::findOrFail($id);
+            $internalUser = InternalUser::with(['accountManagerDetails', 'bdManagerDetails', 'recruiterDetails'])
+                ->findOrFail($id);
 
             // Authorization check using service
             if (! $this->access->canViewResource($actor, $internalUser)) {

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 100);
             $table->string('phone', 20)->index();
+            $table->string('email', 100)->nullable()->index();
             $table->string('zip_code', 50);
             $table->string('address', 255)->nullable();
             $table->string('remarks', 255)->nullable();
@@ -22,7 +23,7 @@ return new class extends Migration
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();
 
-            $table->unique(['business_id', 'phone'], 'uniq_party_phone_per_business');
+            $table->unique(['business_id', 'phone', 'email'], 'uniq_party_phone_email_per_business');
 
             // performance
             $table->index(['business_id', 'party_type']);

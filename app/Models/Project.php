@@ -27,8 +27,8 @@ class Project extends Model
         return $this->belongsTo(Party::class, 'client_id');
     }
 
-    public function timesheets()
-    {
-        return $this->hasMany(Timesheet::class);
-    }
+    // public function timesheets()
+    // {
+    //     return $this->hasMany(Timesheet::class);
+    // }
 }

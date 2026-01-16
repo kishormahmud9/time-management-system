@@ -45,6 +45,11 @@ class Timesheet extends Model
         return $this->hasMany(TimesheetEntry::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class);
+    }
+
     // Scopes
     public function scopeDraft($query)
     {

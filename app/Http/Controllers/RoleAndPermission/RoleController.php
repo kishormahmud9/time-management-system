@@ -52,7 +52,7 @@ class RoleController extends Controller
     public function view()
     {
         try {
-            $roles = Role::all();
+            $roles = Role::where('name', '!=', 'System Admin')->get();
 
             return response()->json([
                 'success' => true,

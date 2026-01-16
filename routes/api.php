@@ -45,6 +45,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/profile-edit', 'edit');
         Route::post('/change-password', 'changePassword');
         Route::post('/company-update', 'companyUpdate');
+        Route::get  ('/company', 'companyView');
     });
 
     //**** Timesheet Related Route (All Authenticated Users) ****//

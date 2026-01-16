@@ -131,7 +131,7 @@ class TimesheetManageController extends Controller
 
             // Filter by business
             $query = $this->access->filterByBusiness($actor, Timesheet::class)
-                ->with(['user', 'client', 'mail', 'approver', 'entries']);
+                ->with(['user', 'client', 'mail', 'approver', 'entries', 'attachments', 'userDetail']);
 
             // Optional filters
             if ($request->has('status')) {
@@ -181,7 +181,7 @@ class TimesheetManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $timesheet = Timesheet::with(['user', 'client', 'mail', 'approver', 'entries'])
+            $timesheet = Timesheet::with(['user', 'client', 'mail', 'approver', 'entries', 'attachments', 'userDetail'])
                 ->findOrFail($id);
 
             // Check access permission

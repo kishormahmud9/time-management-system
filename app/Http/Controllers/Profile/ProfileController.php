@@ -14,11 +14,11 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 class ProfileController extends Controller
 {
     use UserActivityTrait;
-    // ✅ user view profile
+    // user view profile
     public function view()
     {
         try {
-            // ✅ Get authenticated user
+            // Get authenticated user
             $user = Auth::user();
 
             if (!$user) {
@@ -28,26 +28,29 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            // ✅ Return user profile
+            // Load relationships
+            $user->load(['business', 'roles']);
+
+            // Return user profile
             return response()->json([
                 'success' => true,
                 'data' => $user,
             ], 200);
         } catch (ValidationException $e) {
-            // 🔸 Validation errors (rare for view)
+            //  Validation errors (rare for view)
             return response()->json([
                 'success' => false,
                 'errors' => $e->errors(),
             ], 422);
         } catch (TransportExceptionInterface $e) {
-            // 🔸 Mail-related transport issue (future-proof)
+            //  Mail-related transport issue (future-proof)
             return response()->json([
                 'success' => false,
                 'message' => 'Mail transport failed.',
                 'error' => $e->getMessage(),
             ], 500);
         } catch (\Exception $e) {
-            // 🔸 Catch-all for unexpected issues
+            //  Catch-all for unexpected issues
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong.',
@@ -56,7 +59,7 @@ class ProfileController extends Controller
         }
     }
 
-    // ✅ Edit Profile 
+    // Edit Profile 
     public function edit(Request $request)
     {
         // dd($request->all());
@@ -70,7 +73,7 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            // ✅ Validation (exclude forbidden fields)
+            // Validation (exclude forbidden fields)
             $validated = $request->validate([
                 'name' => 'required|string|max:100',
                 'email' => 'required|email|max:100',
@@ -81,7 +84,7 @@ class ProfileController extends Controller
                 'signature' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
-            // ✅ Handle image upload
+            // Handle image upload
             if ($request->hasFile('image')) {
                 $imagePath = $request->file('image')->store('users/images', 'public');
                 $validated['image'] = $imagePath;
@@ -93,7 +96,7 @@ class ProfileController extends Controller
             }
             // dd($validated);
 
-            // ✅ Update allowed fields
+            // Update allowed fields
             $user->update($validated);
             // dd($user);
 
@@ -123,7 +126,7 @@ class ProfileController extends Controller
         }
     }
 
-    // ✅ Change Password
+    // Change Password
     public function changePassword(Request $request)
     {
         try {
@@ -136,13 +139,13 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            // ✅ Validation
+            // Validation
             $request->validate([
                 'old_password' => 'required|string',
                 'new_password' => 'required|string|min:8|confirmed', // needs new_password_confirmation
             ]);
 
-            // ✅ Check old password
+            // Check old password
             if (!Hash::check($request->old_password, $user->password)) {
                 return response()->json([
                     'success' => false,
@@ -150,7 +153,7 @@ class ProfileController extends Controller
                 ], 400);
             }
 
-            // ✅ Update password
+            // Update password
             $user->password = Hash::make($request->new_password);
             $user->save();
 
@@ -187,7 +190,7 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            // ✅ Validation
+            // Validation
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|max:255',
@@ -196,7 +199,7 @@ class ProfileController extends Controller
                 'address' => 'nullable|string|max:500',
             ]);
 
-            // ✅ Handle logo file upload
+            // Handle logo file upload
             if ($request->hasFile('logo')) {
                 $logoPath = $request->file('logo')->store('business/logos', 'public');
                 $validated['logo'] = $logoPath;
@@ -223,6 +226,41 @@ class ProfileController extends Controller
                 'message' => 'Mail transport failed.',
                 'error' => $e->getMessage(),
             ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Company View
+    public function companyView()
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                ], 401);
+            }
+
+            $company = Business::where('owner_id', $user->id)->first();
+            if (!$company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Company not found',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Company information retrieved successfully',
+                'data' => $company,
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

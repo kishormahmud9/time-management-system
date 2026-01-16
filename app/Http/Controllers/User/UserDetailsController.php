@@ -185,7 +185,9 @@ class UserDetailsController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $userDetail = UserDetail::where('business_id', $actor->business_id)->get();
+            $userDetail = UserDetail::where('business_id', $actor->business_id)
+                ->with(['user', 'party', 'accountManager', 'businessDevelopmentManager', 'recruiter'])
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -208,7 +210,8 @@ class UserDetailsController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $userDetail = UserDetail::findOrFail($id);
+            $userDetail = UserDetail::with(['user', 'party', 'accountManager', 'businessDevelopmentManager', 'recruiter'])
+                ->findOrFail($id);
 
             // Authorization check using service
             if (! $this->access->canViewResource($actor, $userDetail)) {

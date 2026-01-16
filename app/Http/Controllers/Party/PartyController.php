@@ -187,7 +187,7 @@ class PartyController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            $party = Party::findOrFail($id);
+            $party = Party::with(['projects', 'timesheets', 'userDetails'])->findOrFail($id);
 
             if (! $this->access->canViewResource($actor, $party)) {
                 return response()->json([

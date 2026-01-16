@@ -62,9 +62,7 @@ return new class extends Migration
             $table->float('w2')->nullable();
             $table->float('c2c_or_other')->nullable();
             $table->integer('w2_or_c2c_type')->nullable();
-
-            $table->boolean('c2c_or_other_recurssive')->default(false);
-            $table->integer('c2c_or_other_recurssive_month')->nullable();
+         
             $table->integer('c2c_or_other_rate_type')->nullable();
             // =========================
             // Employer Info
@@ -88,6 +86,8 @@ return new class extends Migration
             $table->boolean('active')->default(true);
             $table->string('address')->nullable();
             $table->string('invoice_to')->nullable();
+            $table->boolean('recurssive')->default(false);
+            $table->string('recurssive_month')->nullable();
 
             $table->foreignId('business_id')->constrained('businesses')->onDelete('cascade');
             $table->timestamps();

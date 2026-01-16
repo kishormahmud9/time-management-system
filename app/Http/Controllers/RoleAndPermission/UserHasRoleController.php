@@ -58,7 +58,7 @@ class UserHasRoleController extends Controller
 
 
             // Use RoleService to handle authorization & assignment
-            $assignedRoleName = $this->roleService->assignRole($actor, $user, (int)$request->role_id);
+            $assignedRoleName = $this->roleService->syncUserRole($actor, $user, (int)$request->role_id);
 
 
             // Log activity

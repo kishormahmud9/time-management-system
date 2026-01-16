@@ -159,6 +159,7 @@ class DemoDataSeeder extends Seeder
             'view_user_details',
             'update_user_details',
             'delete_user_details',
+            'manage_roles'
         ]);
 
         // User - Basic permissions

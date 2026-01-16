@@ -6,29 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attachment extends Model
 {
-    protected $fillable = [
-        'business_id',
-        'uploaded_by',
-        'file_name',
-        'file_path',
-        'file_type',
-        'file_size',
-        'attachable_type',
-        'attachable_id',
-    ];
+    protected $guarded = [];
 
     public function business()
     {
         return $this->belongsTo(Business::class);
     }
 
-    public function uploader()
+    public function timesheet()
+    {
+        return $this->belongsTo(Timesheet::class);
+    }
+
+    public function uploadedBy()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    public function attachable()
+    public function approvedBy()
     {
-        return $this->morphTo();
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 }

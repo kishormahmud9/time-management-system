@@ -98,7 +98,7 @@ class UserManageController extends Controller
             ]);
 
             // Create Skeleton User Detail
-            \App\Models\UserDetail::create([
+            $userDetail = \App\Models\UserDetail::create([
                 'user_id' => $user->id,
                 'business_id' => $actor->business_id,
                 // other fields will be null/default as per new migration
@@ -117,6 +117,11 @@ class UserManageController extends Controller
                 'success' => true,
                 'message' => 'User created successfully',
                 'data' => $user,
+                'user_details' => [
+                    'id' => $userDetail->id,
+                    'user_id' => $userDetail->user_id,
+                    'business_id' => $userDetail->business_id,
+                ],
                 'assigned_role' => $assignedRoleName,
             ], 201);
         } catch (Exception $e) {
@@ -191,6 +196,9 @@ class UserManageController extends Controller
                     'message' => 'You are not allowed to view this user.'
                 ], 403);
             }
+
+            // Load relationships
+            $user->load(['business', 'roles', 'userDetails']);
 
             return response()->json([
                 'success' => true,

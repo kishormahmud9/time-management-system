@@ -33,7 +33,7 @@ return new class extends Migration
                 'uniq_business_template'
             );
 
-            // ⚡ performance
+            // performance
             $table->index(['business_id', 'status']);
             $table->index(['business_id', 'template_type']);
         });

@@ -216,6 +216,9 @@ class AuthController extends Controller
             // 6) Everything ok → login successful
             $this->logActivity('login');
 
+            // Load business info
+            $user->load('business');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
