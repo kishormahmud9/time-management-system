@@ -31,12 +31,12 @@ return [
     |
     */
 
-    'allowed_origins' => [],
+    'allowed_origins' => ['http://localhost:3000'],
 
     // jodi 127.0.0.1 use koro tokhon etao add korte paro:
     // 'allowed_origins' => ['http://localhost:3000', 'http://127.0.0.1:3000'],
 
-    'allowed_origins_patterns' => ['*'],
+    'allowed_origins_patterns' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -72,6 +72,6 @@ return [
     |
     */
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

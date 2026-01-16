@@ -85,7 +85,7 @@ return new class extends Migration
             // =========================
             // Misc
             // =========================
-            $table->boolean('active')->nullable();
+            $table->boolean('active')->default(true);
             $table->string('address')->nullable();
             $table->string('invoice_to')->nullable();
 
