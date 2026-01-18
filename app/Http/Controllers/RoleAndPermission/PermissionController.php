@@ -72,19 +72,25 @@ class PermissionController extends Controller
     {
         try {
             $permissions = Permission::whereIn('name', [
-                'view_user',
-                'create_timesheet',
-                'view_timesheet',
-                'update_timesheet',
-                'submit_timesheet',
-                'view_party',
-                'view_project',
-                'view_reports',
-                'create_user_details',
-                'view_user_details',
-                'update_user_details',
-                'delete_user_details',
-                'manage_roles'
+              'create_user',
+            'view_user',
+            'manage_roles',
+            'create_timesheet',
+            'view_timesheet',
+            'update_timesheet',
+            'submit_timesheet',
+            'view_party',
+            'view_project',
+            'view_reports',
+            'create_user_details',
+            'view_user_details',
+            'update_user_details',
+            'delete_user_details',
+            'create_internal_user',
+            'view_internal_user',
+            'update_internal_user',
+            'delete_internal_user',
+            'status_update_internal_user',
             ])->get();
 
             return response()->json([
@@ -105,12 +111,12 @@ class PermissionController extends Controller
     {
         try {
             $permissions = Permission::whereIn('name', [
-                'create_timesheet',
-                'view_timesheet',
-                'update_timesheet',
-                'submit_timesheet',
-                'view_party',
-                'view_project',
+               'create_timesheet',
+            'view_timesheet',
+            'update_timesheet',
+            'submit_timesheet',
+            'view_party',
+            'view_project',
             ])->get();
 
             return response()->json([

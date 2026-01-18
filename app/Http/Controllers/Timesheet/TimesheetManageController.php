@@ -16,7 +16,6 @@ use App\Models\User;
 use App\Models\UserDetail;
 use App\Notifications\TimesheetSubmitted;
 use App\Notifications\TimesheetStatusUpdated;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 
 class TimesheetManageController extends Controller

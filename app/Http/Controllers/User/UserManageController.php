@@ -67,11 +67,17 @@ class UserManageController extends Controller
             $imagePath = null;
             $signaturePath = null;
 
+            \Illuminate\Support\Facades\Log::info('User Create Request Data:', $request->all());
+            \Illuminate\Support\Facades\Log::info('Has Image File:', ['status' => $request->hasFile('image')]);
+
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $imageName = rand(100000, 999999) . '_' . time() . '.' . $image->getClientOriginalExtension();
                 $image->storeAs('users/images', $imageName, 'public');
                 $imagePath = 'users/images/' . $imageName;  // ✅ Fixed: Removed 'storage/' prefix
+                \Illuminate\Support\Facades\Log::info('Image stored at:', ['path' => $imagePath]);
+            } else {
+                 \Illuminate\Support\Facades\Log::warning('No image file detected in request.');
             }
 
             if ($request->hasFile('signature')) {

@@ -86,6 +86,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/permissions', 'view');
         Route::get('/staff-available-permissions', 'staffAvailablePermission');
         Route::get('/user-available-permissions', 'userAvailablePermission');
+        Route::get('/user-permissions', 'userPermission');
+        Route::get('/staff-permissions', 'staffPermission');
         Route::get('/permission/{id}', 'viewDetails');
     });
 
