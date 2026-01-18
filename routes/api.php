@@ -84,8 +84,8 @@ Route::middleware('auth:api')->group(function () {
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
         Route::get('/permissions', 'view');
-        Route::get('/supervisor-permissions', 'supervisorPermissions');
-        Route::get('/user-permissions', 'userPermissions');
+        Route::get('/staff-available-permissions', 'staffAvailablePermission');
+        Route::get('/user-available-permissions', 'userAvailablePermission');
         Route::get('/permission/{id}', 'viewDetails');
     });
 

@@ -147,7 +147,9 @@ class DemoDataSeeder extends Seeder
 
         // Staff - Limited permissions
         $staffRole->syncPermissions([
+            'create_user',
             'view_user',
+            'manage_roles',
             'create_timesheet',
             'view_timesheet',
             'update_timesheet',
@@ -159,7 +161,11 @@ class DemoDataSeeder extends Seeder
             'view_user_details',
             'update_user_details',
             'delete_user_details',
-            'manage_roles'
+            'create_internal_user',
+            'view_internal_user',
+            'update_internal_user',
+            'delete_internal_user',
+            'status_update_internal_user',
         ]);
 
         // User - Basic permissions

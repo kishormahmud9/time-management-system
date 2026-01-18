@@ -67,13 +67,25 @@ class PermissionController extends Controller
         }
     }
 
-    // Get supervisor permissions
-    public function supervisorPermissions()
+    // Get staff available permissions
+    public function staffAvailablePermission()
     {
         try {
-            $permissions = Permission::whereHas('roles', function ($q) {
-                $q->where('name', 'Staff');
-            })->get();
+            $permissions = Permission::whereIn('name', [
+                'view_user',
+                'create_timesheet',
+                'view_timesheet',
+                'update_timesheet',
+                'submit_timesheet',
+                'view_party',
+                'view_project',
+                'view_reports',
+                'create_user_details',
+                'view_user_details',
+                'update_user_details',
+                'delete_user_details',
+                'manage_roles'
+            ])->get();
 
             return response()->json([
                 'success' => true,
@@ -88,13 +100,18 @@ class PermissionController extends Controller
         }
     }
 
-    // Get user permissions
-    public function userPermissions()
+    // Get user available permissions
+    public function userAvailablePermission()
     {
         try {
-            $permissions = Permission::whereHas('roles', function ($q) {
-                $q->where('name', 'User');
-            })->get();
+            $permissions = Permission::whereIn('name', [
+                'create_timesheet',
+                'view_timesheet',
+                'update_timesheet',
+                'submit_timesheet',
+                'view_party',
+                'view_project',
+            ])->get();
 
             return response()->json([
                 'success' => true,
