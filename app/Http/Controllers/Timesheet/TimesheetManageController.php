@@ -155,6 +155,12 @@ class TimesheetManageController extends Controller
                 $query->where('end_date', '<=', $request->to_date);
             }
 
+            if ($request->filled('month')) {
+                $date = Carbon::createFromFormat('Y-m', $request->month);
+                $query->whereMonth('start_date', $date->month)
+                    ->whereYear('start_date', $date->year);
+            }
+
             $timesheets = $query->latest()->get();
 
             return response()->json([
