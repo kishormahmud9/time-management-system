@@ -61,6 +61,14 @@ class InternalUserController extends Controller
             ], 401);
         }
 
+        // Check Permission
+        if (! $actor->hasPermissionTo('create_internal_user')) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'You do not have permission to create internal users.'
+             ], 403);
+        }
+
         DB::beginTransaction();
         try {
 
@@ -118,6 +126,10 @@ class InternalUserController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
+            if (! $actor->hasPermissionTo('view_internal_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to view internal users.'], 403);
+            }
+
             $internalUsers = InternalUser::where('business_id', $actor->business_id)->get();
 
             return response()->json([
@@ -139,6 +151,10 @@ class InternalUserController extends Controller
             $actor = Auth::user();
             if (! $actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (! $actor->hasPermissionTo('view_internal_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to view internal users.'], 403);
             }
 
             $internalUser = InternalUser::with(['accountManagerDetails', 'bdManagerDetails', 'recruiterDetails'])
@@ -174,6 +190,10 @@ class InternalUserController extends Controller
                 'success' => false,
                 'message' => 'Unauthenticated.'
             ], 401);
+        }
+
+        if (! $actor->hasPermissionTo('update_internal_user')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to update internal users.'], 403);
         }
 
         $internalUser = InternalUser::findOrFail($id);
@@ -270,6 +290,10 @@ class InternalUserController extends Controller
             ], 401);
         }
 
+        if (! $actor->hasPermissionTo('delete_internal_user')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to delete internal users.'], 403);
+        }
+
         try {
             $internalUser = InternalUser::findOrFail($id);
 
@@ -335,6 +359,10 @@ class InternalUserController extends Controller
                 'success' => false,
                 'message' => 'Unauthenticated.'
             ], 401);
+        }
+
+        if (! $actor->hasPermissionTo('role_update_internal_user')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to update internal user roles.'], 403);
         }
 
         // Validation

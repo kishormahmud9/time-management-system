@@ -61,6 +61,14 @@ class UserManageController extends Controller
             ], 401);
         }
 
+        // Check Permission
+        if (! $actor->hasPermissionTo('create_user')) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'You do not have permission to create users.'
+             ], 403);
+        }
+
         DB::beginTransaction();
         try {
             // Image upload (same as your code)
@@ -170,6 +178,10 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
+            if (! $actor->hasPermissionTo('view_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to view users.'], 403);
+            }
+
             $users = $this->access->filterByBusiness($actor, \App\Models\User::class)->with('roles')->get();
 
             return response()->json([
@@ -191,6 +203,10 @@ class UserManageController extends Controller
             $actor = Auth::user();
             if (! $actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (! $actor->hasPermissionTo('view_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to view users.'], 403);
             }
 
             $user = User::findOrFail($id);
@@ -226,6 +242,10 @@ class UserManageController extends Controller
             $actor = Auth::user();
             if (! $actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (! $actor->hasPermissionTo('update_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to update users.'], 403);
             }
 
             $user = User::findOrFail($id);
@@ -351,6 +371,10 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
+            if (! $actor->hasPermissionTo('delete_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
+            }
+
             $user = User::findOrFail($id);
 
             // Authorization: only allowed actors can delete
@@ -411,6 +435,10 @@ class UserManageController extends Controller
             $actor = Auth::user();
             if (! $actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (! $actor->hasPermissionTo('update_user')) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to update user status.'], 403);
             }
 
             // Validation

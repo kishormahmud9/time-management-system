@@ -29,9 +29,9 @@ class UserAccessService
             return true;
         }
 
-        // Only Business Admins can modify resources in their business
-        if ($actor->hasRole('Business Admin')) {
-            // Special rule for User model: don't allow Business Admin to modify System Admin
+        // Only Business Admins and Staff can modify resources in their business
+        if ($actor->hasRole('Business Admin') || $actor->hasRole('Staff')) {
+            // Special rule for User model: don't allow Business Admin or Staff to modify System Admin
             if ($resource instanceof User) {
                 if (method_exists($resource, 'hasRole') && $resource->hasRole('System Admin')) {
                     return false;
