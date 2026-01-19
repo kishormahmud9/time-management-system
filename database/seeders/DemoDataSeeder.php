@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Business;
+use App\Models\BusinessPermission;
 use App\Models\Holiday;
 use App\Models\InternalUser;
 use App\Models\Party;
@@ -34,6 +35,16 @@ class DemoDataSeeder extends Seeder
             'slug' => 'demo-tech-solutions',
             'owner_id' => null, // Will update after creating owner
             'status' => 'active',
+        ]);
+
+        // Create Default Business Permissions
+        BusinessPermission::create([
+            'business_id' => $business->id,
+            'user_can_login' => true,
+            'commission' => true,
+            'template_can_add' => true,
+            'qb_integration' => true,
+            'user_limit' => 10,
         ]);
 
         // Create Roles (if not exists)

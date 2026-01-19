@@ -31,7 +31,7 @@ class BusinessController extends Controller
     public function store(Request $request)
     {
         try {
-            // ✅ Validation
+            // Validation
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:100',
                 'email' => 'required|string|email|max:100|unique:users',
@@ -45,6 +45,11 @@ class BusinessController extends Controller
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'signature' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'user_can_login' => 'nullable|in:0,1',
+                'commission' => 'nullable|in:0,1',
+                'template_can_add' => 'nullable|in:0,1',
+                'qb_integration' => 'nullable|in:0,1',
+                'user_limit' => 'nullable|integer',
             ]);
 
             if ($validator->fails()) {
@@ -76,7 +81,7 @@ class BusinessController extends Controller
     public function view()
     {
         try {
-            $businesses = Business::get();
+            $businesses = Business::with(['owner', 'permission', 'users'])->get();
             if (!$businesses) {
                 return response()->json([
                     'success' => false,
@@ -100,7 +105,7 @@ class BusinessController extends Controller
     public function viewDetails($id)
     {
         try {
-            $business = Business::findOrFail($id);
+            $business = Business::with(['owner', 'permission', 'users'])->findOrFail($id);
 
             if (!$business) {
                 return response()->json([
@@ -137,11 +142,16 @@ class BusinessController extends Controller
                 ], 404);
             }
             $validator = Validator::make($request->all(), [
-                'email' => 'required|string|email|max:100|unique:users',
+                'email' => 'required|string|email|max:100|unique:businesses,email,' . $business->id,
                 'phone' => 'nullable|string|max:20',
                 'name' => 'required|string|max:100',
                 'address' => 'nullable|string|max:255',
                 'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'user_can_login' => 'nullable|in:0,1',
+                'commission' => 'nullable|in:0,1',
+                'template_can_add' => 'nullable|in:0,1',
+                'qb_integration' => 'nullable|in:0,1',
+                'user_limit' => 'nullable|integer',
             ]);
 
             if ($validator->fails()) {
@@ -161,12 +171,15 @@ class BusinessController extends Controller
 
             $business->update($request->only(['name', 'phone', 'email', 'address']));
 
+            // Update Business Permissions
+            $this->businessService->updateBusinessPermissions($business, $request->all());
+
             $this->logActivity('update_business_owner');
 
             return response()->json([
                 'success' => true,
                 'message' => 'Business updated successfully',
-                'data' => $business
+                'data' => $business->load('permission')
             ]);
         } catch (Exception $e) {
             return response()->json([

@@ -35,6 +35,11 @@ class RoleService
             if (! in_array($targetRoleName, $allowed, true)) {
                 throw new Exception('You are not allowed to assign this role.');
             }
+        } elseif ($actor->hasRole('Staff') && $actor->hasPermissionTo('manage_roles')) {
+            $allowed = ['User', 'Staff'];
+            if (! in_array($targetRoleName, $allowed, true)) {
+                throw new Exception('You are not allowed to assign this role.');
+            }
         } else {
             throw new Exception('You do not have permission to assign roles.');
         }
@@ -68,6 +73,11 @@ class RoleService
             // allowed
         } elseif ($actor->hasRole('Business Admin')) {
             $allowed = ['User', 'Staff', 'Business Admin'];
+            if (! in_array($targetRoleName, $allowed, true)) {
+                throw new Exception('You are not allowed to assign this role.');
+            }
+        } elseif ($actor->hasRole('Staff') && $actor->hasPermissionTo('manage_roles')) {
+            $allowed = ['User', 'Staff'];
             if (! in_array($targetRoleName, $allowed, true)) {
                 throw new Exception('You are not allowed to assign this role.');
             }

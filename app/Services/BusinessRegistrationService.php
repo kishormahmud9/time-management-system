@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Business;
+use App\Models\BusinessPermission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -41,7 +42,7 @@ class BusinessRegistrationService
     {
         $logoPath = $this->uploadFile($data['logo'] ?? null, 'businesses/logos');
 
-        return Business::create([
+        $business = Business::create([
             'name' => $data['company_name'],
             'slug' => SlugService::generateUniqueSlug($data['company_name'], Business::class),
             'email' => $data['email'],
@@ -51,6 +52,18 @@ class BusinessRegistrationService
             'logo' => $logoPath,
             'status' => $isAdminCreated ? 'active' : 'pending',
         ]);
+
+        // Create Business Permissions
+        BusinessPermission::create([
+            'business_id'      => $business->id,
+            'user_can_login'   => $data['user_can_login'] ?? true,
+            'commission'       => $data['commission'] ?? true,
+            'template_can_add' => $data['template_can_add'] ?? true,
+            'qb_integration'   => $data['qb_integration'] ?? true,
+            'user_limit'       => $data['user_limit'] ?? 0,
+        ]);
+
+        return $business;
     }
 
     /**
@@ -105,13 +118,30 @@ class BusinessRegistrationService
     }
 
     /**
-     * 🔸 File Upload Helper
+     * � Update Business Permissions
+     */
+    public function updateBusinessPermissions(Business $business, array $data)
+    {
+        return BusinessPermission::updateOrCreate(
+            ['business_id' => $business->id],
+            [
+                'user_can_login'   => $data['user_can_login'] ?? true,
+                'commission'       => $data['commission'] ?? true,
+                'template_can_add' => $data['template_can_add'] ?? true,
+                'qb_integration'   => $data['qb_integration'] ?? true,
+                'user_limit'       => $data['user_limit'] ?? 0,
+            ]
+        );
+    }
+
+    /**
+     * �🔸 File Upload Helper
      */
     public function uploadFile($file, $path)
     {
         if (!$file) return null;
         $fileName = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
         $file->storeAs($path, $fileName, 'public');
-        return $path . '/' . $fileName;  // ✅ Fixed: Removed 'storage/' prefix
+        return $path . '/' . $fileName; 
     }
 }

@@ -144,6 +144,11 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
         Route::patch('/business/{id}', 'statusUpdate');
     });
 
+    //**** SystemDashboard related route ****//
+    Route::controller(SystemDashboardController::class)->group(function () {
+        Route::get('/system-dashboard', 'view');
+    });
+
 
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
