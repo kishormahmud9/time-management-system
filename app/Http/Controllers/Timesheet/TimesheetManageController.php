@@ -17,6 +17,9 @@ use App\Models\UserDetail;
 use App\Notifications\TimesheetSubmitted;
 use App\Notifications\TimesheetStatusUpdated;
 use Illuminate\Support\Facades\Notification;
+use App\Models\EmailTemplate;
+use App\Mail\TimesheetApprovalEmail;
+use Illuminate\Support\Facades\Mail;
 
 class TimesheetManageController extends Controller
 {
@@ -430,6 +433,14 @@ class TimesheetManageController extends Controller
             // Notify User on status change
             if (in_array($request->status, ['approved', 'rejected'])) {
                 $timesheet->user->notify(new TimesheetStatusUpdated($timesheet, $request->status));
+            }
+
+            // Send Approval Email to external address if status is approved
+            if ($request->status === 'approved' && $timesheet->mail_template_id && $timesheet->send_to) {
+                $template = EmailTemplate::find($timesheet->mail_template_id);
+                if ($template) {
+                    Mail::to($timesheet->send_to)->send(new TimesheetApprovalEmail($timesheet, $template));
+                }
             }
 
             // Notify Approver if submitted
