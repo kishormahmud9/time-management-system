@@ -7,6 +7,7 @@ use App\Traits\UserActivityTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Exception;
 
 class PermissionController extends Controller
@@ -71,7 +72,75 @@ class PermissionController extends Controller
     public function staffAvailablePermission()
     {
         try {
-            $permissions = Permission::whereIn('name', [
+            $user = auth()->user();
+            $staffRole = Role::where('name', 'Staff')->first();
+            
+            if (!$staffRole) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff role not found'
+                ], 404);
+            }
+
+            $rolePermissions = $staffRole->permissions;
+            
+            // Filter permissions that the logged-in user actually has
+            $permissions = $rolePermissions->filter(function ($permission) use ($user) {
+                return $user->hasPermissionTo($permission->name);
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $permissions
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch permissions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Get user available permissions
+    public function userAvailablePermission()
+    {
+        try {
+            $user = auth()->user();
+            $userRole = Role::where('name', 'User')->first();
+
+            if (!$userRole) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User role not found'
+                ], 404);
+            }
+
+            $rolePermissions = $userRole->permissions;
+
+            // Filter permissions that the logged-in user actually has
+            $permissions = $rolePermissions->filter(function ($permission) use ($user) {
+                return $user->hasPermissionTo($permission->name);
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $permissions
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch permissions',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Get Staff permissions
+   public function staffPermission()  
+    {
+        try {
+           $permissions = Permission::whereIn('name', [
               'create_user',
             'view_user',
             'manage_roles',
@@ -93,6 +162,7 @@ class PermissionController extends Controller
             'status_update_internal_user',
             ])->get();
 
+
             return response()->json([
                 'success' => true,
                 'data' => $permissions
@@ -106,8 +176,8 @@ class PermissionController extends Controller
         }
     }
 
-    // Get user available permissions
-    public function userAvailablePermission()
+    // Get User permissions
+   public function userPermission()  
     {
         try {
             $permissions = Permission::whereIn('name', [
@@ -119,6 +189,7 @@ class PermissionController extends Controller
             'view_project',
             ])->get();
 
+
             return response()->json([
                 'success' => true,
                 'data' => $permissions
@@ -131,6 +202,8 @@ class PermissionController extends Controller
             ], 500);
         }
     }
+
+
 
     // Get single permission
     public function viewDetails($id)
