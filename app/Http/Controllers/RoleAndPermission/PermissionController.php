@@ -69,7 +69,7 @@ class PermissionController extends Controller
     }
 
     // Get staff available permissions
-    public function staffAvailablePermission()
+    public function supervisorAvailablePermission()
     {
         try {
             $user = auth()->user();
@@ -137,7 +137,7 @@ class PermissionController extends Controller
     }
 
     // Get Staff permissions
-   public function staffPermission()  
+   public function supervisorPermission()  
     {
         try {
            $permissions = Permission::whereIn('name', [
