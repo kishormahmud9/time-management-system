@@ -451,9 +451,9 @@ class DemoDataSeeder extends Seeder
             Holiday::create($holiday);
         }
 
-        $this->command->info('✅ Demo data seeded successfully!');
+        $this->command->info('Demo data seeded successfully!');
         $this->command->info('');
-        $this->command->info('📧 Login Credentials:');
+        $this->command->info('Login Credentials:');
         $this->command->info('-----------------------------------');
         $this->command->info('System Admin:');
         $this->command->info('  Email: admin@system.com');

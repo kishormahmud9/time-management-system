@@ -51,6 +51,8 @@ return new class extends Migration
 
             $table->decimal('gross_margin', 10, 2)->nullable();
             $table->decimal('net_margin', 10, 2)->nullable();
+            $table->decimal('expanse', 10, 2)->nullable();
+            $table->decimal('internal_expanse', 10, 2)->nullable();
 
 
             $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])
