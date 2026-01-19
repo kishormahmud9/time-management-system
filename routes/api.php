@@ -16,6 +16,8 @@ use App\Http\Controllers\Timesheet\TimesheetManageController;
 use App\Http\Controllers\User\UserActivityLogController;
 use App\Http\Controllers\User\UserManageController;
 use App\Http\Controllers\User\UserDetailsController;
+use App\Http\Controllers\SystemDashboardController;
+use App\Http\Controllers\StaffDashboardController;
 
 Route::get('/', function () {
     return response()->json([
@@ -149,6 +151,8 @@ Route::middleware(['auth:api', 'role:System Admin'])->group(function () {
         Route::get('/system-dashboard', 'view');
     });
 
+    
+
 
     //**** Permission Related Route ****//
     Route::controller(PermissionController::class)->group(function () {
@@ -209,5 +213,10 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
         Route::put('/timesheet/{id}', 'update');
         Route::delete('/timesheet/{id}', 'delete');
         Route::patch('/timesheet/{id}', 'statusUpdate');
+    });
+
+    //**** StaffDashboard related route ****//
+    Route::controller(StaffDashboardController::class)->group(function () {
+        Route::get('/staff-dashboard', 'view');
     });
 });
