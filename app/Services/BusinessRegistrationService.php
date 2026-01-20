@@ -53,16 +53,6 @@ class BusinessRegistrationService
             'status' => $isAdminCreated ? 'active' : 'pending',
         ]);
 
-        // Create Business Permissions
-        BusinessPermission::create([
-            'business_id'      => $business->id,
-            'user_can_login'   => $data['user_can_login'] ?? true,
-            'commission'       => $data['commission'] ?? true,
-            'template_can_add' => $data['template_can_add'] ?? true,
-            'qb_integration'   => $data['qb_integration'] ?? true,
-            'user_limit'       => $data['user_limit'] ?? 0,
-        ]);
-
         return $business;
     }
 

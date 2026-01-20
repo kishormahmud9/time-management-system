@@ -262,6 +262,18 @@ class BusinessController extends Controller
                         $owner->assignRole('Business Admin');
                     }
 
+                    // Create Business Permissions if not already exists
+                    \App\Models\BusinessPermission::firstOrCreate(
+                        ['business_id' => $business->id],
+                        [
+                            'user_can_login'   => true,
+                            'commission'       => true,
+                            'template_can_add' => true,
+                            'qb_integration'   => true,
+                            'user_limit'       => 0,
+                        ]
+                    );
+
                     // optionally remove any 'rejected' or 'pending' related roles:
                     // $owner->removeRole('SomeOtherRole');
 
