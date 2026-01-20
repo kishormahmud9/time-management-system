@@ -251,7 +251,7 @@ class TimesheetManageController extends Controller
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'remarks' => 'nullable|string|max:1000',
                 'entries' => 'nullable|array',
-                'entries.*.entry_date' => 'required|date|between:' . $request->start_date . ',' . $request->end_date,
+                'entries.*.entry_date' => 'required|date|after_or_equal:start_date|before_or_equal:end_date',
                 'entries.*.daily_hours' => 'required|numeric|min:0|max:24',
                 'entries.*.extra_hours' => 'nullable|numeric|min:0|max:24',
                 'entries.*.vacation_hours' => 'nullable|numeric|min:0|max:24',
