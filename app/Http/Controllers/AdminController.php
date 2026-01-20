@@ -40,15 +40,22 @@ class AdminController extends Controller
         $user->business_id = $business->id;
         $user->save();
 
-        // Create Business Permissions
-        \App\Models\BusinessPermission::create([
-            'business_id'      => $business->id,
-            'user_can_login'   => true,
-            'commission'       => true,
-            'template_can_add' => true,
-            'qb_integration'   => true,
-            'user_limit'       => 0,
-        ]);
+        // Assign 'Business Admin' role
+        if (!$user->hasRole('Business Admin')) {
+            $user->assignRole('Business Admin');
+        }
+
+        // Create Business Permissions (using updateOrCreate for safety)
+        \App\Models\BusinessPermission::updateOrCreate(
+            ['business_id' => $business->id],
+            [
+                'user_can_login'   => true,
+                'commission'       => true,
+                'template_can_add' => true,
+                'qb_integration'   => true,
+                'user_limit'       => 0,
+            ]
+        );
 
         return response()->json([
             'message' => 'Business owner approved successfully!',

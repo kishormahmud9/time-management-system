@@ -38,7 +38,6 @@ class BusinessController extends Controller
                 'password' => 'required|string|min:6',
                 'phone' => 'nullable|string|max:20',
                 'company_name' => 'required|string|max:100',
-                'role_id' => 'nullable|integer|exists:roles,id',
                 'address' => 'nullable|string|max:255',
                 'gender' => 'nullable|in:male,female',
                 'marital_status' => 'nullable|in:single,married',

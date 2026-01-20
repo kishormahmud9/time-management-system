@@ -90,11 +90,8 @@ class BusinessRegistrationService
             $business = $this->createBusiness($data, $user->id, true);
             $user->update(['business_id' => $business->id]);
 
-            // Assign Role
-            $role = isset($data['role_id'])
-                ? Role::find($data['role_id'])
-                : Role::where('name', 'Business Admin')->first();
-
+            // Assign "Business Admin" Role Automatically
+            $role = Role::where('name', 'Business Admin')->first();
             if ($role) {
                 $user->assignRole($role->name);
             }
