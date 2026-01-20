@@ -210,7 +210,7 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
 
     //**** Timesheet Related Route (All Authenticated Users) ****//
     Route::controller(TimesheetManageController::class)->group(function () {
-        Route::put('/timesheet/{id}', 'update');
+        Route::post('/timesheet/{id}', 'update');
         Route::delete('/timesheet/{id}', 'delete');
         Route::patch('/timesheet/{id}', 'statusUpdate');
     });
