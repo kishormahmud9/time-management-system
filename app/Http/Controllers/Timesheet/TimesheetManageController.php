@@ -237,10 +237,10 @@ class TimesheetManageController extends Controller
             }
 
             // Only allow editing draft timesheets
-            if (!in_array($timesheet->status, ['draft', 'rejected'])) {
+            if (!in_array($timesheet->status, ['draft','submitted','rejected'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only draft or rejected timesheets can be edited.'
+                    'message' => 'Only draft, submitted or rejected timesheets can be edited.'
                 ], 400);
             }
 
