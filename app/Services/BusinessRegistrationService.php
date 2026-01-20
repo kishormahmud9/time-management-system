@@ -99,6 +99,16 @@ class BusinessRegistrationService
                 $user->assignRole($role->name);
             }
 
+            // Create Business Permissions for Admin created flow
+            BusinessPermission::create([
+                'business_id'      => $business->id,
+                'user_can_login'   => $data['user_can_login'] ?? true,
+                'commission'       => $data['commission'] ?? true,
+                'template_can_add' => $data['template_can_add'] ?? true,
+                'qb_integration'   => $data['qb_integration'] ?? true,
+                'user_limit'       => $data['user_limit'] ?? 0,
+            ]);
+
             DB::commit();
             return compact('user', 'business');
         } catch (Exception $e) {
