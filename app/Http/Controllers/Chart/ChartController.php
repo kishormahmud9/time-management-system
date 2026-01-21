@@ -237,6 +237,28 @@ class ChartController extends Controller
             $query->where('client_id', $request->client_id);
         }
 
+        // Consultant type filter (W2/C2C)
+        if ($request->has('consultant_type') && $request->consultant_type !== 'All') {
+            $query->whereHas('userDetail', function ($q) use ($request) {
+                if ($request->consultant_type === 'W2') {
+                    $q->where('w2', '>', 0);
+                } elseif ($request->consultant_type === 'C2C') {
+                    $q->where('w2', '=', 0);
+                }
+            });
+        }
+
+        // Manager filter (ACM/BDM/Recruiter)
+        if ($request->has('manager_id') && $request->manager_id !== 'All') {
+            $query->whereHas('userDetail', function ($q) use ($request) {
+                $q->where(function($sq) use ($request) {
+                    $sq->where('account_manager_id', $request->manager_id)
+                      ->orWhere('business_development_manager_id', $request->manager_id)
+                      ->orWhere('recruiter_id', $request->manager_id);
+                });
+            });
+        }
+
         // Date filters
         if ($request->has('start_date')) {
             $query->where('start_date', '>=', $request->start_date);
@@ -246,9 +268,13 @@ class ChartController extends Controller
             $query->where('end_date', '<=', $request->end_date);
         }
 
-        // Month filter (YYYY-MM format)
+        // Month filter (supports YYYY-MM or numeric month)
         if ($request->has('month')) {
-            $query->whereRaw('DATE_FORMAT(start_date, "%Y-%m") = ?', [$request->month]);
+            if (preg_match('/^\d{4}-\d{2}$/', $request->month)) {
+                $query->where('start_date', 'like', $request->month . '%');
+            } elseif (is_numeric($request->month)) {
+                $query->whereMonth('start_date', $request->month);
+            }
         }
 
         // Year filter

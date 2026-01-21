@@ -32,7 +32,7 @@ class ReportController extends Controller
             }
 
             $query = $this->access->filterByBusiness($actor, Timesheet::class)
-                ->with(['user', 'client', 'project', 'entries']);
+                ->with(['user', 'client', 'project', 'entries', 'userDetail']);
 
             // Filters
             if ($request->has('user_id')) {
@@ -44,6 +44,29 @@ class ReportController extends Controller
             if ($request->has('client_id')) {
                 $query->where('client_id', $request->client_id);
             }
+
+            // Consultant type filter
+            if ($request->has('consultant_type') && $request->consultant_type !== 'All') {
+                $query->whereHas('userDetail', function ($q) use ($request) {
+                    if ($request->consultant_type === 'W2') {
+                        $q->where('w2', '>', 0);
+                    } elseif ($request->consultant_type === 'C2C') {
+                        $q->where('w2', '=', 0);
+                    }
+                });
+            }
+
+            // Manager filter
+            if ($request->has('manager_id') && $request->manager_id !== 'All') {
+                $query->whereHas('userDetail', function ($q) use ($request) {
+                    $q->where(function($sq) use ($request) {
+                        $sq->where('account_manager_id', $request->manager_id)
+                          ->orWhere('business_development_manager_id', $request->manager_id)
+                          ->orWhere('recruiter_id', $request->manager_id);
+                    });
+                });
+            }
+
             if ($request->has('start_date')) {
                 $query->where('start_date', '>=', $request->start_date);
             }
@@ -52,6 +75,20 @@ class ReportController extends Controller
             }
             if ($request->has('status')) {
                 $query->where('status', $request->status);
+            }
+
+            // Month filter
+            if ($request->has('month')) {
+                if (preg_match('/^\d{4}-\d{2}$/', $request->month)) {
+                    $query->where('start_date', 'like', $request->month . '%');
+                } elseif (is_numeric($request->month)) {
+                    $query->whereMonth('start_date', $request->month);
+                }
+            }
+
+            // Year filter
+            if ($request->has('year')) {
+                $query->whereYear('start_date', $request->year);
             }
 
             $timesheets = $query->latest()->get();
