@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Business;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SystemDashboardController extends Controller
 {
-    // view dashboard 
+    // view dashboard
     public function view()
     {
         try {
