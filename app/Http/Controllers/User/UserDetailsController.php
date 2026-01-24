@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\UserDetail;
 use App\Services\RoleService;
 use App\Services\UserAccessService;
+use App\Services\TimesheetDefaultService;
 use App\Traits\UserActivityTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -19,12 +20,17 @@ class UserDetailsController extends Controller
     use UserActivityTrait;
     protected RoleService $roleService;
     protected UserAccessService $access;
+    protected TimesheetDefaultService $tsDefaultService;
 
 
-    public function __construct(RoleService $roleService, UserAccessService $access)
-    {
+    public function __construct(
+        RoleService $roleService,
+        UserAccessService $access,
+        TimesheetDefaultService $tsDefaultService
+    ) {
         $this->roleService = $roleService;
         $this->access = $access;
+        $this->tsDefaultService = $tsDefaultService;
     }
 
     // Create new Internal User
@@ -50,10 +56,11 @@ class UserDetailsController extends Controller
             'consultant_rate' => 'nullable|numeric|min:0',
 
             // ========================
-            // Contract Dates
+            // Contract Dates & Frequency
             // ========================
             'start_date' => 'required|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
+            'time_sheet_period' => 'nullable|string|in:weekly,bi-weekly,monthly',
 
             // ========================
             // Account Manager
@@ -146,6 +153,7 @@ class UserDetailsController extends Controller
                     // Contract
                     'start_date' => $request->start_date,
                     'end_date' => $request->end_date,
+                    'time_sheet_period' => $request->time_sheet_period,
 
                     // Misc
                     'active' => true,
@@ -154,6 +162,9 @@ class UserDetailsController extends Controller
                     'file_folder' => $request->file_folder,
                 ]
             );
+
+            // Sync Timesheet Defaults
+            $this->tsDefaultService->syncDefaults($userDetail);
 
 
             DB::commit();
@@ -293,6 +304,7 @@ class UserDetailsController extends Controller
             // Contract
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'time_sheet_period' => 'nullable|string|in:weekly,bi-weekly,monthly',
 
             // Misc
             'active' => 'nullable|boolean',
@@ -343,12 +355,16 @@ class UserDetailsController extends Controller
 
                 'start_date',
                 'end_date',
+                'time_sheet_period',
 
                 'active',
                 'address',
                 'invoice_to',
                 'file_folder',
             ]));
+
+            // Sync Timesheet Defaults
+            $this->tsDefaultService->syncDefaults($userDetail);
 
             DB::commit();
 

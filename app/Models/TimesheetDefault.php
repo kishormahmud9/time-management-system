@@ -61,4 +61,33 @@ class TimesheetDefault extends Model
     {
         return $this->user_id !== null;
     }
+
+    public function entries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TimesheetDefaultEntry::class);
+    }
+
+    public function userDetail(): BelongsTo
+    {
+        return $this->belongsTo(UserDetail::class, 'user_details_id');
+    }
+
+    /**
+     * Calculate total hours from entries
+     */
+    public function calculateTotalHours(): float
+    {
+        return (float) $this->entries()
+            ->selectRaw('SUM(default_daily_hours + default_extra_hours) as total')
+            ->value('total') ?? 0;
+    }
+
+    /**
+     * Update total hours in database
+     */
+    public function updateTotalHours(): void
+    {
+        $this->total_hours = $this->calculateTotalHours();
+        $this->save();
+    }
 }

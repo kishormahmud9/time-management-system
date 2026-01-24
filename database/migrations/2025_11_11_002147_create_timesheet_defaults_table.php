@@ -24,17 +24,22 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->decimal('default_daily_hours', 6, 2)->default(8);
-            $table->decimal('default_extra_hours', 6, 2)->default(0);
-            $table->decimal('default_vacation_hours', 6, 2)->default(0);
+            $table->foreignId('user_details_id')
+                ->nullable()
+                ->constrained('user_details')
+                ->nullOnDelete();
 
-            // explicit meaning
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->string('time_sheet_period')->nullable(); // weekly, bi-weekly, monthly
+            $table->decimal('total_hours', 10, 2)->default(0);
+
             $table->boolean('is_business_default')->default(false);
 
             $table->timestamps();
-
-            // enforce one rule per scope
-            $table->unique(['business_id', 'user_id'], 'uniq_timesheet_defaults');
+            
+            // Explicitly NO unique constraint on business_id/user_id 
+            // because we now have multiple records per user (one per period).
         });
     }
 

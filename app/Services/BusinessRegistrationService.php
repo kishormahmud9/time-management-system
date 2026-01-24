@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Exception;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeEmail;
 
 class BusinessRegistrationService
 {
@@ -71,6 +73,15 @@ class BusinessRegistrationService
             // $token = JWTAuth::fromUser($user);
 
             DB::commit();
+
+            // Send Welcome Email
+            try {
+                Mail::to($user->email)->send(new WelcomeEmail($user));
+            } catch (Exception $e) {
+                // Log the error but don't fail the registration
+                logger()->error("Failed to send welcome email to {$user->email}: " . $e->getMessage());
+            }
+
             return compact('user', 'business');
         } catch (Exception $e) {
             DB::rollBack();
@@ -107,6 +118,15 @@ class BusinessRegistrationService
             ]);
 
             DB::commit();
+
+            // Send Welcome Email
+            try {
+                Mail::to($user->email)->send(new WelcomeEmail($user));
+            } catch (Exception $e) {
+                // Log the error but don't fail the registration
+                logger()->error("Failed to send welcome email to {$user->email}: " . $e->getMessage());
+            }
+
             return compact('user', 'business');
         } catch (Exception $e) {
             DB::rollBack();

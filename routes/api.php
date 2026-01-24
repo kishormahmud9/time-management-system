@@ -59,6 +59,7 @@ Route::middleware('auth:api')->group(function () {
         // Route::delete('/timesheet/{id}', 'delete');
         // Route::patch('/timesheet/{id}', 'statusUpdate');
         Route::get('/timesheet-defaults', 'getDefaults');
+        Route::get('/user/{id}/timesheet-defaults', 'getUserDefaults');
         Route::get('/scheduler', 'scheduler');
     });
 

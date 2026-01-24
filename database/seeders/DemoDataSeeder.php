@@ -351,17 +351,13 @@ class DemoDataSeeder extends Seeder
 
             // Contract
             'start_date' => now()->subMonth(),
+            'time_sheet_period' => 'weekly',
             'active' => true,
         ]);
 
-        // Create Timesheet Defaults
-        TimesheetDefault::create([
-            'business_id' => $business->id,
-            'user_id' => null, // Business-wide default
-            'default_daily_hours' => 8.00,
-            'default_extra_hours' => 0.00,
-            'default_vacation_hours' => 0.00,
-        ]);
+        // Generate Timesheet Defaults using the service
+        $tsService = new \App\Services\TimesheetDefaultService();
+        $tsService->syncDefaults($userDetailStaff);
 
         // Create Sample Timesheets
         $timesheet1 = Timesheet::create([

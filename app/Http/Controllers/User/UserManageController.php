@@ -222,6 +222,15 @@ class UserManageController extends Controller
             // Load relationships
             $user->load(['business', 'roles', 'userDetails']);
 
+            // Self-healing: Ensure userDetails exists
+            if (!$user->userDetails) {
+                \App\Models\UserDetail::firstOrCreate([
+                    'user_id' => $user->id,
+                    'business_id' => $user->business_id,
+                ]);
+                $user->load('userDetails');
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $user

@@ -58,4 +58,9 @@ class UserDetail extends Model
             'recruiter_id'
         );
     }
+
+    public function timesheetDefault()
+    {
+        return $this->hasOne(TimesheetDefault::class, 'user_details_id');
+    }
 }

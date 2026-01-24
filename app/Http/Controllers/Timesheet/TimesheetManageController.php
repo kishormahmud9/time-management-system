@@ -471,7 +471,7 @@ class TimesheetManageController extends Controller
     }
 
     /**
-     * Get timesheet defaults for a user
+     * Get timesheet defaults summary for a user
      */
     public function getDefaults(Request $request)
     {
@@ -484,10 +484,9 @@ class TimesheetManageController extends Controller
             $userId = $request->query('user_id');
 
             // Get defaults (user-specific or business-wide)
-            $defaults = TimesheetDefault::getDefaults($actor->business_id, $userId);
+            $defaults = TimesheetDefault::getDefaults((int)$actor->business_id, $userId ? (int)$userId : null);
 
             if (!$defaults) {
-                // Return system defaults if no custom defaults found
                 return response()->json([
                     'success' => true,
                     'data' => [
@@ -510,6 +509,35 @@ class TimesheetManageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch defaults',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all timesheet default records for a specific user
+     */
+    public function getUserDefaults($userId)
+    {
+        try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $defaults = TimesheetDefault::where('business_id', $actor->business_id)
+                ->where('user_id', $userId)
+                ->with(['entries', 'userDetail'])
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $defaults
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch user defaults',
                 'error' => $e->getMessage()
             ], 500);
         }
