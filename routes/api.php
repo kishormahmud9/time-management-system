@@ -130,12 +130,6 @@ Route::middleware(['auth:api', 'role:Business Admin'])->group(function () {
         Route::get('/manage-activity', 'view');
     });
 
-    //**** Email Template Related Route ****//
-    Route::controller(EmailTemplateController::class)->group(function () {
-        Route::post('/email-template', 'store');
-        Route::put('/email-template/{id}', 'update');
-        Route::delete('/email-template/{id}', 'delete');
-    });
 });
 
 //////////////////// Private Route For System Admin Role  /////////////////
@@ -223,5 +217,17 @@ Route::middleware(['auth:api', 'role:Business Admin|Staff'])->group(function () 
     //**** StaffDashboard related route ****//
     Route::controller(StaffDashboardController::class)->group(function () {
         Route::get('/staff-dashboard', 'view');
+    });
+
+    //**** SupervisorDashboard related route ****//
+    Route::controller(\App\Http\Controllers\SupervisorDashboardController::class)->group(function () {
+        Route::get('/supervisor-dashboard-data', 'view');
+    });
+
+    //**** Email Template Related Route ****//
+    Route::controller(EmailTemplateController::class)->group(function () {
+        Route::post('/email-template', 'store');
+        Route::put('/email-template/{id}', 'update');
+        Route::delete('/email-template/{id}', 'delete');
     });
 });

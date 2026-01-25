@@ -160,6 +160,8 @@ class PermissionController extends Controller
             'update_internal_user',
             'delete_internal_user',
             'status_update_internal_user',
+            'create_email_template',
+            'view_email_template',
             ])->get();
 
 
@@ -186,6 +188,7 @@ class PermissionController extends Controller
             'update_timesheet',
             'submit_timesheet',
             'view_party',
+            'view_email_template',
             ])->get();
 
 

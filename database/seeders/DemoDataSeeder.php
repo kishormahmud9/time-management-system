@@ -104,11 +104,16 @@ class DemoDataSeeder extends Seeder
             'status_update_internal_user',
             'role_update_internal_user',
 
-            // User Details Management
             'create_user_details',
             'view_user_details',
             'update_user_details',
             'delete_user_details',
+
+            // Email Template Management
+            'create_email_template',
+            'view_email_template',
+            'update_email_template',
+            'delete_email_template',
         ];
 
         foreach ($permissions as $permission) {
@@ -153,7 +158,10 @@ class DemoDataSeeder extends Seeder
             'view_user_details',
             'update_user_details',
             'delete_user_details',
-
+            'create_email_template',
+            'view_email_template',
+            'update_email_template',
+            'delete_email_template',
         ]);
 
         // Staff - Limited permissions
@@ -177,6 +185,8 @@ class DemoDataSeeder extends Seeder
             'update_internal_user',
             'delete_internal_user',
             'status_update_internal_user',
+            'create_email_template',
+            'view_email_template',
         ]);
 
         // User - Basic permissions
@@ -187,6 +197,7 @@ class DemoDataSeeder extends Seeder
             'submit_timesheet',
             'view_party',
             'view_project',
+            'view_email_template',
         ]);
 
         // Create Users

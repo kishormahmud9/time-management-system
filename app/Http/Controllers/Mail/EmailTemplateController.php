@@ -94,6 +94,7 @@ class EmailTemplateController extends Controller
 
             // ✅ Filter by business
             $templates = $this->access->filterByBusiness($actor, EmailTemplate::class)
+                ->with('usedBy')
                 ->where('status', 'active')
                 ->get();
 
