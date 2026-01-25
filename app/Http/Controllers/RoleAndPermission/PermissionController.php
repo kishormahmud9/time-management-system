@@ -148,9 +148,9 @@ class PermissionController extends Controller
             'view_timesheet',
             'update_timesheet',
             'submit_timesheet',
+            'create_party',
             'view_party',
-            'view_project',
-            'view_reports',
+            'update_party',
             'create_user_details',
             'view_user_details',
             'update_user_details',
@@ -186,7 +186,6 @@ class PermissionController extends Controller
             'update_timesheet',
             'submit_timesheet',
             'view_party',
-            'view_project',
             ])->get();
 
 

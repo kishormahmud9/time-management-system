@@ -248,7 +248,7 @@ class ProfileController extends Controller
                 ], 401);
             }
 
-            $company = Business::where('owner_id', $user->id)->first();
+            $company = Business::with('permission')->where('owner_id', $user->id)->first();
             if (!$company) {
                 return response()->json([
                     'success' => false,

@@ -69,6 +69,10 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/chart/trend', 'trend');
     });
 
+    Route::get('/revenue/dashboard-data', [\App\Http\Controllers\Chart\RevenueReportController::class, 'index']);
+    Route::get('/consultant/dashboard-data', [\App\Http\Controllers\Chart\ConsultantDashboardController::class, 'index']);
+    Route::get('/hours/dashboard-data', [\App\Http\Controllers\Chart\HoursDashboardController::class, 'index']);
+
 
     //**** Party Related Route ****//
     Route::controller(PartyController::class)->group(function () {

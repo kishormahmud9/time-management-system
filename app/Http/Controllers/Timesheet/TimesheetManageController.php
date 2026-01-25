@@ -390,6 +390,14 @@ class TimesheetManageController extends Controller
                     'message' => 'You are not allowed to modify this timesheet.'
                 ], 403);
             }
+            
+            // Only allow status updates if not already approved
+            if ($timesheet->status === 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approved timesheets cannot be modified.'
+                ], 400);
+            }
 
             // Validation
             $validator = Validator::make($request->all(), [

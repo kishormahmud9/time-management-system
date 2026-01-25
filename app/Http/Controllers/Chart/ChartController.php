@@ -130,93 +130,6 @@ class ChartController extends Controller
         }
     }
 
-    /**
-     * Calculate financial metrics for timesheets
-     * Following the same logic as TimesheetManageController.statusUpdate
-     */
-    private function calculateMetrics($timesheets, $actor)
-    {
-        $totalHours = 0;
-        $totalGrossMargin = 0;
-        $totalExpense = 0;
-        $totalInternalExpense = 0;
-        $totalNetMargin = 0;
-
-        $statusCounts = [
-            'approved' => 0,
-            'submitted' => 0,
-            'draft' => 0,
-            'rejected' => 0,
-        ];
-
-        foreach ($timesheets as $timesheet) {
-            $totalHours += (float) $timesheet->total_hours;
-
-            // Count by status
-            $statusCounts[$timesheet->status] = ($statusCounts[$timesheet->status] ?? 0) + 1;
-
-            // Get user detail for rate calculations
-            if ($timesheet->userDetail) {
-                $userDetail = $timesheet->userDetail;
-
-                // Calculate Gross Margin
-                $grossMargin = $timesheet->total_hours * $userDetail->client_rate;
-                $totalGrossMargin += $grossMargin;
-
-                // Calculate Expense (same logic as statusUpdate)
-                $expense = $userDetail->w2 > 0
-                    ? ($timesheet->total_hours * $userDetail->other_rate) +
-                      ($timesheet->total_hours * $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax) / 100)
-                    : ($timesheet->total_hours * $userDetail->other_rate) +
-                      ($timesheet->total_hours * $userDetail->c2c_or_other);
-
-                $totalExpense += $expense;
-
-                // Calculate Internal Expense (commissions)
-                $internalExpense = ($timesheet->total_hours * $userDetail->account_manager_commission) +
-                                   ($timesheet->total_hours * $userDetail->business_development_manager_commission) +
-                                   ($timesheet->total_hours * $userDetail->recruiter_commission);
-
-                $totalInternalExpense += $internalExpense;
-
-                // Net Margin
-                $totalNetMargin += ($grossMargin - $expense - $internalExpense);
-            }
-        }
-
-        return [
-            'total_hours' => round($totalHours, 2),
-            'total_gross_margin' => round($totalGrossMargin, 2),
-            'total_net_margin' => round($totalNetMargin, 2),
-            'total_expense' => round($totalExpense, 2),
-            'total_internal_expense' => round($totalInternalExpense, 2),
-            'timesheet_count' => $timesheets->count(),
-            'approved_count' => $statusCounts['approved'],
-            'pending_count' => $statusCounts['submitted'],
-            'draft_count' => $statusCounts['draft'],
-            'rejected_count' => $statusCounts['rejected'],
-        ];
-    }
-
-    /**
-     * Format date based on grouping type
-     */
-    private function formatPeriod($date, $groupBy)
-    {
-        $carbonDate = \Carbon\Carbon::parse($date);
-
-        return match ($groupBy) {
-            'day' => $carbonDate->format('Y-m-d'),
-            'week' => $carbonDate->format('Y') . '-' . $carbonDate->weekOfYear,
-            'month' => $carbonDate->format('Y-m'),
-            'year' => $carbonDate->format('Y'),
-            default => $carbonDate->format('Y-m'),
-        };
-    }
-
-    /**
-     * Apply common filters to query
-     */
     private function applyFilters($query, Request $request, $actor)
     {
         // Status filter
@@ -260,13 +173,87 @@ class ChartController extends Controller
     }
 
     /**
+     * Calculate financial metrics for timesheets
+     */
+    private function calculateMetrics($timesheets, $actor)
+    {
+        $totalHours = 0;
+        $totalGrossMargin = 0;
+        $totalExpense = 0;
+        $totalInternalExpense = 0;
+        $totalNetMargin = 0;
+
+        $statusCounts = [
+            'approved' => 0,
+            'submitted' => 0,
+            'draft' => 0,
+            'rejected' => 0,
+        ];
+
+        foreach ($timesheets as $timesheet) {
+            $totalHours += (float) $timesheet->total_hours;
+            $statusCounts[$timesheet->status] = ($statusCounts[$timesheet->status] ?? 0) + 1;
+
+            if ($timesheet->userDetail) {
+                $userDetail = $timesheet->userDetail;
+                $grossMargin = $timesheet->total_hours * $userDetail->client_rate;
+                $totalGrossMargin += $grossMargin;
+
+                $expense = $userDetail->w2 > 0
+                    ? ($timesheet->total_hours * $userDetail->other_rate) +
+                      ($timesheet->total_hours * $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax) / 100)
+                    : ($timesheet->total_hours * $userDetail->other_rate) +
+                      ($timesheet->total_hours * $userDetail->c2c_or_other);
+
+                $totalExpense += $expense;
+
+                $internalExpense = ($timesheet->total_hours * $userDetail->account_manager_commission) +
+                                   ($timesheet->total_hours * $userDetail->business_development_manager_commission) +
+                                   ($timesheet->total_hours * $userDetail->recruiter_commission);
+
+                $totalInternalExpense += $internalExpense;
+                $totalNetMargin += ($grossMargin - $expense - $internalExpense);
+            }
+        }
+
+        return [
+            'total_hours' => round($totalHours, 2),
+            'total_gross_margin' => round($totalGrossMargin, 2),
+            'total_net_margin' => round($totalNetMargin, 2),
+            'total_expense' => round($totalExpense, 2),
+            'total_internal_expense' => round($totalInternalExpense, 2),
+            'timesheet_count' => $timesheets->count(),
+            'approved_count' => $statusCounts['approved'],
+            'pending_count' => $statusCounts['submitted'],
+            'draft_count' => $statusCounts['draft'],
+            'rejected_count' => $statusCounts['rejected'],
+        ];
+    }
+
+    /**
+     * Format date based on grouping type
+     */
+    private function formatPeriod($date, $groupBy)
+    {
+        $carbonDate = \Carbon\Carbon::parse($date);
+
+        return match ($groupBy) {
+            'day' => $carbonDate->format('Y-m-d'),
+            'week' => $carbonDate->format('Y') . '-' . $carbonDate->weekOfYear,
+            'month' => $carbonDate->format('Y-m'),
+            'year' => $carbonDate->format('Y'),
+            default => $carbonDate->format('Y-m'),
+        };
+    }
+
+    /**
      * Get MySQL date format based on grouping type
      */
     private function getDateFormat($groupBy)
     {
         return match ($groupBy) {
             'day' => '%Y-%m-%d',
-            'week' => '%Y-%u',  // Year-Week
+            'week' => '%Y-%u',
             'month' => '%Y-%m',
             'year' => '%Y',
             default => '%Y-%m',
