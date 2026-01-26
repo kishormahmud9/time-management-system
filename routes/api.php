@@ -19,6 +19,7 @@ use App\Http\Controllers\User\UserDetailsController;
 use App\Http\Controllers\SystemDashboardController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\UserDashboardController;
 
 Route::get('/', function () {
     return response()->json([
@@ -74,6 +75,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/revenue/dashboard-data', [\App\Http\Controllers\Chart\RevenueReportController::class, 'index']);
     Route::get('/consultant/dashboard-data', [\App\Http\Controllers\Chart\ConsultantDashboardController::class, 'index']);
     Route::get('/hours/dashboard-data', [\App\Http\Controllers\Chart\HoursDashboardController::class, 'index']);
+    Route::get('/user-dashboard-data', [UserDashboardController::class, 'index']);
 
 
     //**** Party Related Route ****//

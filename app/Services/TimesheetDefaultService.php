@@ -65,19 +65,23 @@ class TimesheetDefaultService
         $start = Carbon::parse($tsDefault->start_date);
         $end = Carbon::parse($tsDefault->end_date);
 
+        // Fetch user's custom weekend from userDetail
+        $weekend = $tsDefault->userDetail ? $tsDefault->userDetail->weekend : null;
+
+        // If no custom weekend is set, default to Saturday and Sunday
+        if (!$weekend || !is_array($weekend)) {
+            $weekend = ['Saturday', 'Sunday'];
+        }
+
         $date = $start->copy();
         while ($date->lte($end)) {
             $dayOfWeek = $date->dayOfWeek; // Carbon: 0=Sun, 1=Mon, ..., 6=Sat
-            $hours = ($dayOfWeek >= 1 && $dayOfWeek <= 5) ? 8 : 0;
+            $dayName = $date->format('l'); // Full day name (e.g., "Saturday")
 
-            // We use 'day_of_week' in the entries table logic I defined earlier, 
-            // but wait - the entries table might need to be linked to the date if we want specificity.
-            // However, the user said "monthly hile monthe er suru and seser date thakbe".
-            // If the entries only have day_of_week, we can still link them by date if we want.
-            
-            // Let's re-verify the timesheet_default_entries table structure.
-            // I defined it as having 'day_of_week'.
-            
+            // Check if current day is in user's weekend list
+            $isWeekend = in_array($dayName, $weekend);
+            $hours = $isWeekend ? 0 : 8;
+
             TimesheetDefaultEntry::updateOrCreate(
                 [
                     'timesheet_default_id' => $tsDefault->id,

@@ -273,6 +273,7 @@ class ProfileController extends Controller
     // Weekend Update
     public function updateWeekend(Request $request)
     {
+        \Log::info('updateWeekend triggered', ['data' => $request->all(), 'user_id' => Auth::id()]);
         try {
             /** @var \App\Models\User $user */
             $user = Auth::user();
