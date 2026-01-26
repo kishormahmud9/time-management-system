@@ -29,7 +29,7 @@ class ProfileController extends Controller
             }
 
             // Load relationships
-            $user->load(['business', 'roles']);
+            $user->load(['business', 'roles', 'userDetails']);
 
             // Return user profile
             return response()->json([
@@ -261,6 +261,57 @@ class ProfileController extends Controller
                 'message' => 'Company information retrieved successfully',
                 'data' => $company,
             ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Weekend Update
+    public function updateWeekend(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                ], 401);
+            }
+
+            $validated = $request->validate([
+                'weekend' => 'required|array|max:2',
+                'weekend.*' => 'string|in:Saturday,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday',
+            ]);
+
+            // Get or create user details
+            $userDetails = $user->userDetails;
+            if (!$userDetails) {
+                $userDetails = $user->userDetails()->create([
+                    'business_id' => $user->business_id,
+                ]);
+            }
+
+            $userDetails->update([
+                'weekend' => $validated['weekend'],
+            ]);
+
+            $this->logActivity('update_weekend');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Weekend settings updated successfully',
+                'data' => $userDetails->fresh(),
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

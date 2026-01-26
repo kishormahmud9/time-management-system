@@ -18,6 +18,7 @@ use App\Http\Controllers\User\UserManageController;
 use App\Http\Controllers\User\UserDetailsController;
 use App\Http\Controllers\SystemDashboardController;
 use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\HolidayController;
 
 Route::get('/', function () {
     return response()->json([
@@ -48,6 +49,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/change-password', 'changePassword');
         Route::post('/company-update', 'companyUpdate');
         Route::get  ('/company', 'companyView');
+        Route::post ('/update-weekend', 'updateWeekend');
     });
 
     //**** Timesheet Related Route (All Authenticated Users) ****//
@@ -103,6 +105,12 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/roles', 'view');
         Route::get('/role/{id}', 'viewDetails');
     });
+
+    //**** Holiday Related Route (All Authenticated Users) ****//
+    Route::controller(HolidayController::class)->group(function () {
+        Route::get('/holidays', 'view');
+        Route::get('/holiday/{id}', 'viewDetails');
+    });
 });
 
 
@@ -128,6 +136,13 @@ Route::middleware(['auth:api', 'role:Business Admin'])->group(function () {
     //**** Activity Related Routes ****//
     Route::controller(UserActivityLogController::class)->group(function () {
         Route::get('/manage-activity', 'view');
+    });
+
+    //**** Holiday CRUD Routes (Business Admin) ****//
+    Route::controller(HolidayController::class)->group(function () {
+        Route::post('/holiday', 'store');
+        Route::post('/holiday/{id}', 'update');
+        Route::delete('/holiday/{id}', 'delete');
     });
 
 });

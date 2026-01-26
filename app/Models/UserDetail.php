@@ -8,6 +8,10 @@ class UserDetail extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'weekend' => 'array',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Core Relations
