@@ -31,7 +31,10 @@ return [
     |
     */
 
-    'allowed_origins' => ['http://localhost:3000'],
+   'allowed_origins' => [
+    'http://localhost:3000', // local dev
+    'https://timesheet-managament.vercel.app', // vercel live frontend
+],
 
     // jodi 127.0.0.1 use koro tokhon etao add korte paro:
     // 'allowed_origins' => ['http://localhost:3000', 'http://127.0.0.1:3000'],
