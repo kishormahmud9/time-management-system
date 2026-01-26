@@ -103,6 +103,8 @@ class TimesheetManageController extends Controller
                 ]);
             }
 
+            // Update timesheet with calculated total hours
+            $timesheet->update(['total_hours' => $totalHours]);
 
             $userDetail->update([
                 'account_manager_commission_rate_count_on' => $totalHours * $userDetail->account_manager_commission,
