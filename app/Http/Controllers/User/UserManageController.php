@@ -380,8 +380,8 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            if (! $actor->hasPermissionTo('delete_user')) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
+            if (!$actor->hasPermissionTo('delete_user') || !$actor->hasRole('Business Admin')) {
+                return response()->json(['success' => false, 'message' => 'Only Business Admin can delete users.'], 403);
             }
 
             $user = User::findOrFail($id);

@@ -290,10 +290,10 @@ class PartyController extends Controller
 
             $party = Party::findOrFail($id);
 
-            if (! $this->access->canModifyResource($actor, $party)) {
+            if (!$actor->hasRole('Business Admin')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not allowed to delete this party.'
+                    'message' => 'Only Business Admin can delete parties.'
                 ], 403);
             }
 

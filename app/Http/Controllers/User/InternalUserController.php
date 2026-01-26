@@ -290,8 +290,8 @@ class InternalUserController extends Controller
             ], 401);
         }
 
-        if (! $actor->hasPermissionTo('delete_internal_user')) {
-            return response()->json(['success' => false, 'message' => 'You do not have permission to delete internal users.'], 403);
+        if (!$actor->hasPermissionTo('delete_internal_user') || !$actor->hasRole('Business Admin')) {
+            return response()->json(['success' => false, 'message' => 'Only Business Admin can delete internal users.'], 403);
         }
 
         try {
@@ -311,6 +311,16 @@ class InternalUserController extends Controller
                     'success' => false,
                     'message' => 'Unauthorized business access.'
                 ], 403);
+            }
+
+            // Check if user is assigned to any user_details
+            if ($internalUser->accountManagerDetails()->exists() || 
+                $internalUser->bdManagerDetails()->exists() || 
+                $internalUser->recruiterDetails()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete: User is assigned as Manager or Recruiter to other users. Please unassign first.'
+                ], 409);
             }
 
             DB::beginTransaction();
