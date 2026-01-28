@@ -48,6 +48,8 @@ class UserDetailsController extends Controller
             ],
 
             'party_id'    => 'nullable|exists:parties,id',
+            'client_id'   => 'nullable|exists:parties,id',
+            'vendor_id'   => 'nullable|exists:parties,id',
 
             // ========================
             // Rates (Business Critical)
@@ -121,6 +123,8 @@ class UserDetailsController extends Controller
                 ],
                 [
                     'party_id' => $request->party_id,
+                    'client_id' => $request->client_id,
+                    'vendor_id' => $request->vendor_id,
 
                     // Rates
                     'client_rate' => $request->client_rate,
@@ -269,6 +273,8 @@ class UserDetailsController extends Controller
         // Validation
         $validator = Validator::make($request->all(), [
             'party_id' => 'nullable|exists:parties,id',
+            'client_id' => 'nullable|exists:parties,id',
+            'vendor_id' => 'nullable|exists:parties,id',
 
             // Rates
             'client_rate' => 'required|numeric|min:0',
@@ -325,6 +331,8 @@ class UserDetailsController extends Controller
         try {
             $userDetail->update($request->only([
                 'party_id',
+                'client_id',
+                'vendor_id',
 
                 'client_rate',
                 'consultant_rate',

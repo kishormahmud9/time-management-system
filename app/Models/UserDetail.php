@@ -33,6 +33,16 @@ class UserDetail extends Model
         return $this->belongsTo(Party::class);
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Party::class, 'client_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Party::class, 'vendor_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Internal Users (Roles)
