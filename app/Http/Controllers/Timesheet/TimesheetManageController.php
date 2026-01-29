@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Timesheet;
 
 use App\Http\Controllers\Controller;
 use App\Models\Timesheet;
+use App\Models\TimesheetAttachment;
 use App\Models\TimesheetDefault;
 use App\Services\UserAccessService;
 use App\Traits\UserActivityTrait;
@@ -112,6 +113,19 @@ class TimesheetManageController extends Controller
                 'recruiter_rate_count_on' => $totalHours * $userDetail->recruiter_commission,
             ]);
 
+            // Handle multiple file uploads
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store("timesheets/{$actor->business_id}/{$timesheet->id}", 'public');
+                    
+                    $timesheet->attachments()->create([
+                        'file_path' => $path,
+                        'original_filename' => $file->getClientOriginalName(),
+                        'file_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                    ]);
+                }
+            }
 
             $this->logActivity('create_timesheet');
 
@@ -299,6 +313,38 @@ class TimesheetManageController extends Controller
 
                 // Update total hours
                 $timesheet->updateTotalHours();
+            }
+
+            // Handle multiple file uploads
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store("timesheets/{$actor->business_id}/{$timesheet->id}", 'public');
+                    
+                    $timesheet->attachments()->create([
+                        'file_path' => $path,
+                        'original_filename' => $file->getClientOriginalName(),
+                        'file_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                    ]);
+                }
+            }
+
+            // Handle attachment deletions
+            if ($request->has('delete_attachments')) {
+                $deleteIds = is_array($request->delete_attachments) 
+                    ? $request->delete_attachments 
+                    : json_decode($request->delete_attachments, true);
+                
+                if ($deleteIds) {
+                    $attachments = TimesheetAttachment::whereIn('id', $deleteIds)
+                        ->where('timesheet_id', $timesheet->id)
+                        ->get();
+                    
+                    foreach ($attachments as $attachment) {
+                        \Storage::disk('public')->delete($attachment->file_path);
+                        $attachment->delete();
+                    }
+                }
             }
 
             DB::commit();
@@ -653,6 +699,39 @@ class TimesheetManageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch scheduler data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download timesheet attachment
+     */
+    public function downloadAttachment($attachmentId)
+    {
+        try {
+            $actor = Auth::user();
+            if (!$actor) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            $attachment = TimesheetAttachment::findOrFail($attachmentId);
+            
+            // Check if file exists
+            if (!\Storage::disk('public')->exists($attachment->file_path)) {
+                return response()->json(['success' => false, 'message' => 'File not found'], 404);
+            }
+
+            $filePath = storage_path('app/public/' . $attachment->file_path);
+            
+            return response()->download($filePath, $attachment->original_filename, [
+                'Content-Type' => $attachment->file_type,
+                'Content-Disposition' => 'attachment; filename="' . $attachment->original_filename . '"'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to download file',
                 'error' => $e->getMessage()
             ], 500);
         }

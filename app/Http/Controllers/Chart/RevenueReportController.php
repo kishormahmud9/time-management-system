@@ -86,6 +86,7 @@ class RevenueReportController extends Controller
 
         // User (Consultant) filter
         if ($request->has('user_id') && $request->user_id !== 'All user') {
+            \Log::info('Revenue Dashboard Filter - user_id received:', ['user_id' => $request->user_id]);
             $query->where('user_id', $request->user_id);
         }
 

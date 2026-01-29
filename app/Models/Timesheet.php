@@ -47,7 +47,7 @@ class Timesheet extends Model
 
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(TimesheetAttachment::class);
     }
 
     // Scopes

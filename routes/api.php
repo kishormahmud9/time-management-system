@@ -64,6 +64,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/timesheet-defaults', 'getDefaults');
         Route::get('/user/{id}/timesheet-defaults', 'getUserDefaults');
         Route::get('/scheduler', 'scheduler');
+        Route::get('/attachment/{id}/download', 'downloadAttachment');
     });
 
     //**** Chart/Analytics Related Route (All Authenticated Users) ****//
