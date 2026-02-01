@@ -3,362 +3,179 @@
 ## 1. Overview
 
 **System Description:**
-The Timesheet Management System is a multi-tenant backend API built with Laravel 11. It allows businesses to manage employees, projects, and timesheets with a robust approval workflow. The system supports multiple organizations (tenants) with strict data isolation.
+The Timesheet Management System is a multi-tenant backend API built with Laravel 11. It facilitates timesheet tracking, project management, and reporting for multiple businesses with strict data isolation.
 
 **Authentication:**
 The API uses **JWT (JSON Web Token)** for authentication.
 All protected endpoints require the following header:
+
 ```http
 Authorization: Bearer <your_token_here>
 Accept: application/json
-Content-Type: application/json
 ```
 
 **Multi-Tenancy:**
-- Users are linked to a specific `business_id`.
-- Data is automatically filtered so users can only access records belonging to their business.
-- **System Admins** have global access.
 
-**Response Format:**
-Standard API response structure:
-```json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": { ... },
-  "errors": { ... } // Only on error
-}
-```
+- Data is filtered by `business_id` (the organizational context).
+- **System Admins** have global access (manage businesses, global roles).
+- **Business Admins** manage their specific organization (users, clients, holidays).
+- **Staff** manage operational data (timesheet approvals, user details).
+- **Users** track their own work (create/view timesheets).
 
 ---
 
-## 2. Authentication Module
+## 2. Public APIs (No Auth)
 
-### Login
-Authenticate a user and receive a JWT token.
+### Authentication Module
 
-- **URL:** `/api/login`
-- **Method:** `POST`
-- **Auth Required:** No
-
-**Request Body:**
-```json
-{
-  "email": "admin@example.com",
-  "password": "password123"
-}
-```
-
-**Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "User login successfully",
-  "data": {
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "admin@example.com",
-      "role": "Business Admin"
-    }
-  }
-}
-```
-
-### Register (Business Owner)
-Register a new business and owner account.
-
-- **URL:** `/api/register`
-- **Method:** `POST`
-- **Auth Required:** No
-
-**Request Body:**
-```json
-{
-  "business_name": "Acme Corp",
-  "name": "Jane Doe",
-  "email": "jane@acme.com",
-  "password": "password123",
-  "password_confirmation": "password123",
-  "phone": "1234567890"
-}
-```
-
-### Get Profile
-Get details of the currently authenticated user.
-
-- **URL:** `/api/profile`
-- **Method:** `GET`
-- **Auth Required:** Yes
+- **POST `/api/register`**: Register a new business owner.
+- **POST `/api/login`**: Login and receive JWT token + user info.
+- **POST `/api/logout`**: Terminate session and invalidate token.
+- **POST `/api/refresh`**: Refresh the JWT token.
+- **POST `/api/forget-password`**: Request OTP for password reset.
+- **POST `/api/otp-varification`**: Verify the 6-digit OTP.
+- **POST `/api/reset-password`**: Reset password using verified email.
 
 ---
 
-## 3. Project Module
+## 3. Core APIs (All Authenticated Roles)
 
-### List Projects
-Get a list of all projects for the current business.
+### Profile & Settings
 
-- **URL:** `/api/projects`
-- **Method:** `GET`
-- **Auth Required:** Yes
+- **GET `/api/profile`**: View current user profile info.
+- **POST `/api/profile-edit`**: Update personal information (name, phone, address, gender, marital status, image, signature).
+- **POST `/api/change-password`**: Update account password.
+- **GET `/api/company`**: View business information.
+- **POST `/api/company-update`**: Update business details (Business Admin only recommended).
+- **POST `/api/update-weekend`**: Set weekend days for the business.
 
-**Query Parameters:**
-- `status` (optional): Filter by status (`active`, `completed`, `on_hold`, `cancelled`)
-- `client_id` (optional): Filter by client
+### Timesheet Operations
 
-**Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "name": "Website Redesign",
-      "code": "WEB-001",
-      "client_id": 5,
-      "status": "active",
-      "client": { "id": 5, "name": "Client A" }
-    }
-  ]
-}
-```
+- **POST `/api/timesheet`**: Create a new timesheet.
+- **GET `/api/timesheet`**: List timesheets (filtered by business).
+- **GET `/api/timesheet/{id}`**: View specific timesheet details.
+- **GET `/api/timesheet-defaults`**: Get default hours (daily, extra, vacation).
+- **GET `/api/user/{id}/timesheet-defaults`**: Get default settings for a specific user.
+- **GET `/api/attachment/{id}/download`**: Download timesheet attachments.
+- **GET `/api/scheduler`**: Get timesheet entries filtered by date/month for calendar view.
 
-### Create Project
-Create a new project.
+### Dashboards & Analytics
 
-- **URL:** `/api/projects`
-- **Method:** `POST`
-- **Auth Required:** Yes (Business Admin / System Admin)
+- **GET `/api/chart/summary`**: Get summary stats for charts.
+- **GET `/api/chart/trend`**: Get trending data for charts.
+- **GET `/api/revenue/dashboard-data`**: Revenue report summary.
+- **GET `/api/consultant/dashboard-data`**: Consultant performance statistics.
+- **GET `/api/hours/dashboard-data`**: Working hours distribution.
+- **GET `/api/user-dashboard-data`**: Personalized dashboard for regular users.
 
-**Request Body:**
-```json
-{
-  "name": "Mobile App Dev",
-  "code": "APP-2025",
-  "client_id": 5,
-  "start_date": "2025-01-01",
-  "end_date": "2025-06-30",
-  "status": "active",
-  "description": "Development of iOS and Android apps"
-}
-```
+### Informational & Lists
 
-### View Project Details
-- **URL:** `/api/projects/{id}`
-- **Method:** `GET`
-- **Auth Required:** Yes
-
-### Update Project
-- **URL:** `/api/projects/{id}`
-- **Method:** `POST` (Note: Using POST for updates)
-- **Auth Required:** Yes (Business Admin / System Admin)
-
-**Request Body:**
-```json
-{
-  "name": "Updated Project Name",
-  "status": "completed"
-}
-```
-
-### Delete Project
-- **URL:** `/api/projects/{id}`
-- **Method:** `DELETE`
-- **Auth Required:** Yes (Business Admin / System Admin)
+- **GET `/api/parties`**: List all parties (Clients, Vendors, Employees).
+- **GET `/api/clients`**: List all clients.
+- **GET `/api/vendors`**: List all vendors.
+- **GET `/api/employees`**: List all employees.
+- **GET `/api/party/{id}`**: View specific party details.
+- **GET `/api/holidays`**: List upcoming holidays.
+- **GET `/api/holiday/{id}`**: View holiday details.
+- **GET `/api/email-template`**: View available email templates.
+- **GET `/api/email-template/{id}`**: View specific template details.
+- **GET `/api/permissions`**: List all permissions.
+- **GET `/api/user-permissions`**: Current user's specific permissions.
+- **GET `/api/supervisor-permissions`**: Permissions available for supervisors.
+- **GET `/api/supervisor-available-permissions`**: List of permissions available for assignment to supervisors.
+- **GET `/api/user-available-permissions`**: List of permissions available for assignment to regular users.
+- **GET `/api/permission/{id}`**: View specific permission details.
+- **GET `/api/roles`**: List all roles.
+- **GET `/api/role/{id}`**: View specific role details.
 
 ---
 
-## 4. Holiday Module
+## 4. Administrative APIs (Role-Based)
 
-### List Holidays
-Get a list of holidays.
+### 🏢 Business Admin (Full Organization Control)
 
-- **URL:** `/api/holidays`
-- **Method:** `GET`
-- **Auth Required:** Yes
+- **POST `/api/role-has-permission`**: Assign permissions to a role.
+- **POST `/api/user-has-role`**: Assign a role to a user.
+- **GET `/api/manage-activity`**: View system activity logs for the organization.
+- **POST `/api/holiday`**: Create a new holiday.
+- **POST `/api/holiday/{id}`**: Update a holiday.
+- **DELETE `/api/holiday/{id}`**: Remove a holiday.
 
-**Query Parameters:**
-- `year` (optional): Filter by year (e.g., 2025)
-- `month` (optional): Filter by month (e.g., 12)
+### 🛡️ System Admin (Global Platform Control)
 
-### Create Holiday
-- **URL:** `/api/holidays`
-- **Method:** `POST`
-- **Auth Required:** Yes (Business Admin)
-
-**Request Body:**
-```json
-{
-  "name": "New Year",
-  "date": "2025-01-01",
-  "type": "public",
-  "description": "Public Holiday"
-}
-```
-
-### Delete Holiday
-- **URL:** `/api/holidays/{id}`
-- **Method:** `DELETE`
-- **Auth Required:** Yes (Business Admin)
+- **POST `/api/business`**: Register a new business tenant.
+- **GET `/api/business`**: List all registered businesses.
+- **GET `/api/business/{id}`**: View business details.
+- **POST `/api/business/{id}`**: Update business details.
+- **DELETE `/api/business/{id}`**: Delete a business.
+- **PATCH `/api/business/{id}`**: Update business status (e.g., active/inactive).
+- **GET `/api/system-dashboard`**: Global analytics for the platform.
+- **POST `/api/permission`**: Create global permissions.
+- **POST `/api/role`**: Create global roles.
 
 ---
 
-## 5. Timesheet Module
+## 5. Staff & Management APIs (Business Admin | Staff)
 
-### Create Timesheet
-Submit a new timesheet.
+### User Management
 
-- **URL:** `/api/timesheet`
-- **Method:** `POST`
-- **Auth Required:** Yes
+- **POST `/api/user`**: Create a new user (Internal or external).
+- **GET `/api/users`**: List all users in the business.
+- **GET `/api/user/{id}`**: View user details.
+- **POST `/api/user/{id}`**: Update user information.
+- **DELETE `/api/user/{id}`**: Delete a user.
+- **PATCH `/api/user/{id}`**: approve/reject/pending status update.
 
-**Request Body:**
-```json
-{
-  "user_id": 1,
-  "client_id": 5,
-  "project_id": 10,
-  "start_date": "2025-11-24",
-  "end_date": "2025-11-30",
-  "status": "submitted",
-  "remarks": "Weekly work",
-  "entries": [
-    {
-      "entry_date": "2025-11-24",
-      "daily_hours": 8,
-      "extra_hours": 0,
-      "note": "Frontend Dev"
-    },
-    {
-      "entry_date": "2025-11-25",
-      "daily_hours": 8,
-      "extra_hours": 1,
-      "note": "Bug Fixing"
-    }
-  ]
-}
-```
+### Internal User Management
 
-**Validation Rules:**
-- `project_id` & `client_id` must belong to the user's business.
-- `entry_date` cannot be a holiday.
-- `daily_hours` + `extra_hours` cannot exceed 24.
+- **POST `/api/internaluser`**: Create internal staff users.
+- **GET `/api/internalusers`**: List internal users.
+- **GET `/api/internaluser/{id}`**: View internal user details.
+- **POST `/api/internaluser/{id}`**: Update internal user info.
+- **DELETE `/api/internaluser/{id}`**: Remove internal user.
+- **PATCH `/api/internaluser/{id}`**: Update role of an internal user.
 
-### List Timesheets
-- **URL:** `/api/timesheet`
-- **Method:** `GET`
-- **Query Params:** `status`, `user_id`, `project_id`, `from_date`, `to_date`
+### Party & Template Management
 
-### Update Timesheet
-Update a **draft** timesheet.
+- **POST `/api/party`**: Create a new party (Client/Vendor/Employee).
+- **PUT `/api/party/{id}`**: Update party details.
+- **DELETE `/api/party/{id}`**: Delete a party.
+- **POST `/api/email-template`**: Create a new email template.
+- **PUT `/api/email-template/{id}`**: Update email template.
+- **DELETE `/api/email-template/{id}`**: Delete email template.
 
-- **URL:** `/api/timesheet/{id}`
-- **Method:** `PUT`
-- **Auth Required:** Yes (Owner of timesheet)
+### Financial & Details
 
-### Status Update (Approve/Reject)
-- **URL:** `/api/timesheet/{id}`
-- **Method:** `PATCH`
-- **Auth Required:** Yes (Business Admin / Approver)
+- **POST `/api/user-details`**: Set billing rates, commissions, and contract details for a user.
+- **GET `/api/user-details`**: View all user details.
+- **POST `/api/user-details/{id}`**: Update rates/commissions.
 
-**Request Body:**
-```json
-{
-  "status": "approved" 
-  // or "rejected", "submitted"
-}
-```
+### Timesheet Management & Approval
+
+- **POST `/api/timesheet/{id}`**: Management update of a timesheet.
+- **PATCH `/api/timesheet/{id}`**: Update timesheet status (**approved**, **rejected**, **submitted**).
+- **GET `/api/staff-dashboard`**: Overview for staff/managers.
+- **GET `/api/supervisor-dashboard-data`**: Specific overview for supervisors.
 
 ---
 
-## 6. Attachment Module
+## 6. Permissions Reference
 
-### Upload Attachment
-Upload a file related to a resource (e.g., Timesheet).
-
-- **URL:** `/api/attachments`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Headers:** `Content-Type: multipart/form-data`
-
-**Request Body:**
-- `file`: (Binary File, max 10MB)
-- `attachable_type`: `App\Models\Timesheet`
-- `attachable_id`: `1`
-
-### Download Attachment
-- **URL:** `/api/attachments/{id}`
-- **Method:** `GET`
-- **Auth Required:** Yes
-
-### Delete Attachment
-- **URL:** `/api/attachments/{id}`
-- **Method:** `DELETE`
-- **Auth Required:** Yes
+| Permission Name     | Description                                   |
+| :------------------ | :-------------------------------------------- |
+| `create_user`       | Can create any type of user.                  |
+| `view_user`         | Can see user lists and details.               |
+| `update_user`       | Can modify user information.                  |
+| `delete_user`       | Can remove users (Business Admin restricted). |
+| `approve_timesheet` | Can change timesheet status to approved.      |
+| `manage_business`   | System Admin level control over tenants.      |
 
 ---
 
-## 7. Dashboard Module
+## 7. Error Handling
 
-### Get Dashboard Stats
-Get summary statistics for the dashboard.
-
-- **URL:** `/api/dashboard`
-- **Method:** `GET`
-- **Auth Required:** Yes
-
-**Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "total_employees": 15,
-    "total_projects": 4,
-    "submitted_timesheets": 5,
-    "approved_timesheets": 20,
-    "pending_approvals": 5,
-    "monthly_overview": [
-      { "month": "2025-10", "count": 12 },
-      { "month": "2025-11", "count": 8 }
-    ]
-  }
-}
-```
-
----
-
-## 8. Reports Module
-
-### Generate Report
-Export timesheet data in various formats.
-
-- **URL:** `/api/reports`
-- **Method:** `GET`
-- **Auth Required:** Yes
-
-**Query Parameters:**
-- `type`: `pdf`, `excel`, or `csv` (Required for export)
-- `start_date`: `YYYY-MM-DD`
-- `end_date`: `YYYY-MM-DD`
-- `user_id`: Filter by user
-- `project_id`: Filter by project
-- `status`: Filter by status
-
-**Example:**
-`GET /api/reports?type=pdf&start_date=2025-11-01&end_date=2025-11-30&status=approved`
-
----
-
-## 9. Error Codes
-
-| Status Code | Meaning | Description |
-| :--- | :--- | :--- |
-| **200** | OK | Request successful. |
-| **201** | Created | Resource created successfully. |
-| **400** | Bad Request | Invalid request logic (e.g., editing a submitted timesheet). |
-| **401** | Unauthorized | Invalid or missing JWT token. |
-| **403** | Forbidden | User does not have permission (e.g., accessing another business's data). |
-| **404** | Not Found | Resource not found. |
-| **422** | Unprocessable Entity | Validation failed (check `errors` object). |
-| **500** | Server Error | Internal system error. |
+- **401 Unauthorized**: Token is missing or invalid.
+- **403 Forbidden**: Authenticated but lacks required role or permission.
+- **422 Unprocessable Content**: Validation failed (returns `errors` object).
+- **404 Not Found**: Resource doesn't exist.
+- **500 Server Error**: Internal system failure.

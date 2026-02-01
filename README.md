@@ -51,6 +51,7 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 ## 📌 Key Features
 
 ### 🔐 Authentication & Security
+
 - ✅ JWT-based authentication
 - ✅ OTP-based password reset
 - ✅ Role-based access control (4 roles)
@@ -59,12 +60,14 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 - ✅ Secure password hashing
 
 ### 🏢 Multi-Tenancy
+
 - ✅ Business-level data isolation
 - ✅ Business-specific users, projects, clients
 - ✅ Business-specific holidays and defaults
 - ✅ Business owner registration workflow
 
 ### ⏰ Timesheet Management
+
 - ✅ Create, read, update, delete timesheets
 - ✅ Daily time entries (regular, extra, vacation hours)
 - ✅ Timesheet status workflow (draft → submitted → approved/rejected)
@@ -73,6 +76,7 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 - ✅ Holiday validation
 
 ### 👥 User Management
+
 - ✅ User CRUD operations
 - ✅ Profile management
 - ✅ User status workflow (approved/pending/rejected)
@@ -80,12 +84,14 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 - ✅ Activity logging
 
 ### 📊 Project & Client Management
+
 - ✅ Project CRUD operations
 - ✅ Party management (clients, vendors, employees)
 - ✅ Business-specific filtering
 - ✅ Project-client relationships
 
 ### 📧 Email System
+
 - ✅ Custom email templates
 - ✅ Welcome emails
 - ✅ OTP emails
@@ -93,6 +99,7 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 - ✅ Password reset success emails
 
 ### 📈 Reporting & Analytics
+
 - ✅ PDF report generation
 - ✅ Excel export functionality
 - ✅ Dashboard statistics
@@ -104,6 +111,7 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 ## 📌 Technology Stack
 
 ### Backend
+
 - **Framework:** Laravel 11.31
 - **PHP Version:** 8.2+
 - **Database:** SQLite (default), MySQL/PostgreSQL supported
@@ -111,11 +119,13 @@ The **Timesheet Management System** is a robust, multi-tenant SaaS application t
 - **Authorization:** Spatie Laravel Permission (^6.21)
 
 ### Additional Packages
+
 - **PDF Generation:** barryvdh/laravel-dompdf (^3.1)
 - **Excel Export:** maatwebsite/excel (^1.1)
 - **File Storage:** Local filesystem (configurable)
 
 ### Development Tools
+
 - **Code Style:** Laravel Pint (^1.13)
 - **Testing:** PHPUnit (^11.0.1)
 - **Docker:** Laravel Sail (^1.26)
@@ -314,104 +324,143 @@ backend/
 
 #### Public Routes (No Authentication Required)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/register` | Register business owner |
-| POST | `/api/login` | User login |
-| POST | `/api/forget-password` | Request password reset OTP |
-| POST | `/api/otp-varification` | Verify OTP |
-| POST | `/api/reset-password` | Reset password |
+| Method | Endpoint                | Description                |
+| ------ | ----------------------- | -------------------------- |
+| POST   | `/api/register`         | Register business owner    |
+| POST   | `/api/login`            | User login                 |
+| POST   | `/api/forget-password`  | Request password reset OTP |
+| POST   | `/api/otp-varification` | Verify OTP                 |
+| POST   | `/api/reset-password`   | Reset password             |
 
 #### Protected Routes (JWT Token Required)
 
-| Method | Endpoint | Description | Roles |
-|--------|----------|-------------|-------|
-| POST | `/api/logout` | Logout user | All |
-| POST | `/api/refresh` | Refresh JWT token | All |
-| GET | `/api/profile` | Get user profile | All |
-| POST | `/api/profile-edit` | Update profile | All |
-| POST | `/api/change-password` | Change password | All |
+| Method | Endpoint               | Description       | Roles |
+| ------ | ---------------------- | ----------------- | ----- |
+| POST   | `/api/logout`          | Logout user       | All   |
+| POST   | `/api/refresh`         | Refresh JWT token | All   |
+| GET    | `/api/profile`         | Get user profile  | All   |
+| POST   | `/api/profile-edit`    | Update profile    | All   |
+| POST   | `/api/change-password` | Change password   | All   |
+| POST   | `/api/company-update`  | Update company    | Admin |
+| GET    | `/api/company`         | View company      | All   |
+| POST   | `/api/update-weekend`  | Update weekend    | Admin |
 
 ### Business Management (System Admin Only)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/business` | Create business |
-| GET | `/api/business` | List all businesses |
-| GET | `/api/business/{id}` | Get business details |
-| POST | `/api/business/{id}` | Update business |
-| DELETE | `/api/business/{id}` | Delete business |
-| PATCH | `/api/business/{id}` | Update business status |
+| Method | Endpoint             | Description            |
+| ------ | -------------------- | ---------------------- |
+| POST   | `/api/business`      | Create business        |
+| GET    | `/api/business`      | List all businesses    |
+| GET    | `/api/business/{id}` | Get business details   |
+| POST   | `/api/business/{id}` | Update business        |
+| DELETE | `/api/business/{id}` | Delete business        |
+| PATCH  | `/api/business/{id}` | Update business status |
 
 ### User Management (System Admin & Business Admin)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/user` | Create user |
-| GET | `/api/users` | List users |
-| GET | `/api/user/{id}` | Get user details |
-| POST | `/api/user/{id}` | Update user |
-| DELETE | `/api/user/{id}` | Delete user |
-| PATCH | `/api/user/{id}` | Update user status |
+| Method | Endpoint                 | Description           |
+| ------ | ------------------------ | --------------------- |
+| POST   | `/api/user`              | Create user           |
+| GET    | `/api/users`             | List users            |
+| GET    | `/api/user/{id}`         | Get user details      |
+| POST   | `/api/user/{id}`         | Update user           |
+| DELETE | `/api/user/{id}`         | Delete user           |
+| PATCH  | `/api/user/{id}`         | Update user status    |
+| POST   | `/api/internaluser`      | Create internal user  |
+| GET    | `/api/internalusers`     | List internal users   |
+| GET    | `/api/internaluser/{id}` | Internal user details |
+| POST   | `/api/internaluser/{id}` | Update internal user  |
+| DELETE | `/api/internaluser/{id}` | Delete internal user  |
+| PATCH  | `/api/internaluser/{id}` | Update internal role  |
+| POST   | `/api/user-details`      | Set user details      |
+| GET    | `/api/user-details`      | List user details     |
+| GET    | `/api/user-details/{id}` | View user details     |
+| POST   | `/api/user-details/{id}` | Update user details   |
+| DELETE | `/api/user-details/{id}` | Delete user details   |
 
 ### Timesheet Management (All Authenticated Users)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/timesheet` | Create timesheet |
-| GET | `/api/timesheet` | List timesheets |
-| GET | `/api/timesheet/{id}` | Get timesheet details |
-| PUT | `/api/timesheet/{id}` | Update timesheet |
-| DELETE | `/api/timesheet/{id}` | Delete timesheet |
-| PATCH | `/api/timesheet/{id}` | Update timesheet status |
-| GET | `/api/timesheet-defaults` | Get timesheet defaults |
+| Method | Endpoint                            | Description             |
+| ------ | ----------------------------------- | ----------------------- |
+| POST   | `/api/timesheet`                    | Create timesheet        |
+| GET    | `/api/timesheet`                    | List timesheets         |
+| GET    | `/api/timesheet/{id}`               | Get timesheet details   |
+| PUT    | `/api/timesheet/{id}`               | Update timesheet        |
+| DELETE | `/api/timesheet/{id}`               | Delete timesheet        |
+| PATCH  | `/api/timesheet/{id}`               | Update timesheet status |
+| GET    | `/api/timesheet-defaults`           | Get timesheet defaults  |
+| GET    | `/api/user/{id}/timesheet-defaults` | User specific defaults  |
+| GET    | `/api/scheduler`                    | Schedule overview       |
+| GET    | `/api/attachment/{id}/download`     | Download attachment     |
 
 ### Project Management
 
-| Method | Endpoint | Description | Roles |
-|--------|----------|-------------|-------|
-| GET | `/api/projects` | List projects | All |
-| GET | `/api/projects/{id}` | Get project details | All |
-| POST | `/api/projects` | Create project | Admin |
-| POST | `/api/projects/{id}` | Update project | Admin |
-| DELETE | `/api/projects/{id}` | Delete project | Admin |
+| Method | Endpoint             | Description         | Roles |
+| ------ | -------------------- | ------------------- | ----- |
+| GET    | `/api/projects`      | List projects       | All   |
+| GET    | `/api/projects/{id}` | Get project details | All   |
+| POST   | `/api/projects`      | Create project      | Admin |
+| POST   | `/api/projects/{id}` | Update project      | Admin |
+| DELETE | `/api/projects/{id}` | Delete project      | Admin |
 
 ### Party Management (Clients, Vendors, Employees)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/party` | Create party |
-| GET | `/api/parties` | List all parties |
-| GET | `/api/clients` | List clients only |
-| GET | `/api/vendors` | List vendors only |
-| GET | `/api/employees` | List employees only |
-| GET | `/api/party/{id}` | Get party details |
-| PUT | `/api/party/{id}` | Update party |
-| DELETE | `/api/party/{id}` | Delete party |
+| Method | Endpoint          | Description         |
+| ------ | ----------------- | ------------------- |
+| POST   | `/api/party`      | Create party        |
+| GET    | `/api/parties`    | List all parties    |
+| GET    | `/api/clients`    | List clients only   |
+| GET    | `/api/vendors`    | List vendors only   |
+| GET    | `/api/employees`  | List employees only |
+| GET    | `/api/party/{id}` | Get party details   |
+| PUT    | `/api/party/{id}` | Update party        |
+| DELETE | `/api/party/{id}` | Delete party        |
 
 ### Role & Permission Management
 
-| Method | Endpoint | Description | Roles |
-|--------|----------|-------------|-------|
-| POST | `/api/role` | Create role | System Admin |
-| GET | `/api/roles` | List roles | All |
-| GET | `/api/role/{id}` | Get role details | All |
-| POST | `/api/role/{id}` | Update role | System Admin |
-| DELETE | `/api/role/{id}` | Delete role | System Admin |
-| POST | `/api/permission` | Create permission | System Admin |
-| GET | `/api/permissions` | List permissions | All |
-| POST | `/api/role-has-permission` | Assign permissions to role | Admin |
-| POST | `/api/user-has-role` | Assign role to user | Admin |
+| Method | Endpoint                                | Description                | Roles        |
+| ------ | --------------------------------------- | -------------------------- | ------------ |
+| POST   | `/api/role`                             | Create role                | System Admin |
+| GET    | `/api/roles`                            | List roles                 | All          |
+| GET    | `/api/role/{id}`                        | Get role details           | All          |
+| POST   | `/api/role/{id}`                        | Update role                | System Admin |
+| DELETE | `/api/role/{id}`                        | Delete role                | System Admin |
+| POST   | `/api/permission`                       | Create permission          | System Admin |
+| GET    | `/api/permissions`                      | List permissions           | All          |
+| POST   | `/api/role-has-permission`              | Assign permissions to role | Admin        |
+| POST   | `/api/user-has-role`                    | Assign role to user        | Admin        |
+| GET    | `/api/user-permissions`                 | User permissions           | All          |
+| GET    | `/api/supervisor-permissions`           | Supervisor permissions     | All          |
+| GET    | `/api/supervisor-available-permissions` | Avail. supervisor perms    | Admin        |
+| GET    | `/api/user-available-permissions`       | Avail. user perms          | Admin        |
+| GET    | `/api/permission/{id}`                  | Permission details         | All          |
 
 ### Other Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard` | Get dashboard statistics |
-| GET | `/api/reports` | Generate reports (PDF/Excel) |
-| GET | `/api/holidays` | List holidays |
-| POST | `/api/attachments` | Upload attachment |
-| GET | `/api/manage-activity` | Get activity logs |
+| Method | Endpoint                         | Description                  |
+| ------ | -------------------------------- | ---------------------------- |
+| GET    | `/api/dashboard`                 | Get dashboard statistics     |
+| GET    | `/api/reports`                   | Generate reports (PDF/Excel) |
+| GET    | `/api/holidays`                  | List holidays                |
+| POST   | `/api/attachments`               | Upload attachment            |
+| GET    | `/api/manage-activity`           | Get activity logs            |
+| GET    | `/api/chart/summary`             | Chart summary analytics      |
+| GET    | `/api/chart/trend`               | Chart trend analytics        |
+| GET    | `/api/revenue/dashboard-data`    | Revenue analytics            |
+| GET    | `/api/consultant/dashboard-data` | Consultant stats             |
+| GET    | `/api/hours/dashboard-data`      | Hours distribution           |
+| GET    | `/api/user-dashboard-data`       | User stats dashboard         |
+| GET    | `/api/system-dashboard`          | Platform global dashboard    |
+| GET    | `/api/staff-dashboard`           | Staff operation dashboard    |
+| GET    | `/api/supervisor-dashboard-data` | Supervisor analytics         |
+| GET    | `/api/email-template`            | List email templates         |
+| GET    | `/api/email-template/{id}`       | Email template details       |
+| POST   | `/api/email-template`            | Create email template        |
+| PUT    | `/api/email-template/{id}`       | Update email template        |
+| DELETE | `/api/email-template/{id}`       | Delete email template        |
+| POST   | `/api/holiday`                   | Create business holiday      |
+| POST   | `/api/holiday/{id}`              | Update business holiday      |
+| DELETE | `/api/holiday/{id}`              | Delete business holiday      |
 
 ---
 
@@ -420,6 +469,7 @@ backend/
 ### Core Tables
 
 #### Users
+
 - `id`, `name`, `username`, `email`, `password`
 - `phone`, `gender`, `marital_status`
 - `business_id`, `status` (approved/pending/rejected)
@@ -427,11 +477,13 @@ backend/
 - `created_at`, `updated_at`
 
 #### Businesses
+
 - `id`, `name`, `slug`, `email`, `phone`, `address`
 - `owner_id`, `logo`, `status` (active/inactive/pending)
 - `created_at`, `updated_at`
 
 #### Timesheets
+
 - `id`, `business_id`, `user_id`, `client_id`, `project_id`
 - `start_date`, `end_date`, `status` (draft/submitted/approved/rejected)
 - `total_hours`, `remarks`, `attachment_path`
@@ -439,15 +491,18 @@ backend/
 - `created_at`, `updated_at`
 
 #### Timesheet Entries
+
 - `id`, `business_id`, `timesheet_id`, `entry_date`
 - `daily_hours`, `extra_hours`, `vacation_hours`, `note`
 - `created_at`, `updated_at`
 
 #### Projects
+
 - `id`, `business_id`, `client_id`, `name`, `code`
 - `created_at`, `updated_at`
 
 #### Parties (Clients/Vendors/Employees)
+
 - `id`, `business_id`, `type` (client/vendor/employee)
 - `name`, `email`, `phone`, `address`
 - `created_at`, `updated_at`
@@ -484,36 +539,40 @@ Timesheets ──> Parties (client)
 
 ```json
 {
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "user": {
-    "id": 1,
-    "name": "John Doe",
-    "email": "john@example.com"
-  },
-  "role": "Business Admin"
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com"
+    },
+    "role": "Business Admin"
 }
 ```
 
 ### Roles & Permissions
 
 #### System Admin
+
 - Full access to all businesses
 - Can create/manage businesses
 - Can assign any role
 - Can manage permissions
 
 #### Business Admin
+
 - Full access to own business data
 - Can create/manage users in own business
 - Can assign roles: User, Staff, Business Admin
 - Can approve/reject timesheets
 
 #### Staff
+
 - Can create/view own timesheets
 - Can view projects and clients
 - Cannot approve timesheets
 
 #### User
+
 - Can create/view own timesheets
 - Can view own profile
 - Cannot approve timesheets
@@ -521,6 +580,7 @@ Timesheets ──> Parties (client)
 ### Permission System
 
 Uses **Spatie Laravel Permission** package:
+
 - Roles: System Admin, Business Admin, Staff, User
 - Permissions: Granular permissions (e.g., `create-timesheet`, `approve-timesheet`)
 - Role-Permission mapping: Flexible assignment
@@ -544,30 +604,34 @@ The project uses **Laravel Pint** for code formatting:
 ### Adding New Features
 
 1. **Create Migration**
-   ```bash
-   php artisan make:migration create_example_table
-   ```
+
+    ```bash
+    php artisan make:migration create_example_table
+    ```
 
 2. **Create Model**
-   ```bash
-   php artisan make:model Example
-   ```
+
+    ```bash
+    php artisan make:model Example
+    ```
 
 3. **Create Controller**
-   ```bash
-   php artisan make:controller ExampleController
-   ```
+
+    ```bash
+    php artisan make:controller ExampleController
+    ```
 
 4. **Create Service (if needed)**
-   ```bash
-   # Manual creation in app/Services/
-   ```
+
+    ```bash
+    # Manual creation in app/Services/
+    ```
 
 5. **Add Routes**
-   ```php
-   // routes/api.php
-   Route::get('/examples', [ExampleController::class, 'index']);
-   ```
+    ```php
+    // routes/api.php
+    Route::get('/examples', [ExampleController::class, 'index']);
+    ```
 
 ### Database Migrations
 
