@@ -80,7 +80,7 @@ class TimesheetDefaultService
 
             // Check if current day is in user's weekend list
             $isWeekend = in_array($dayName, $weekend);
-            $hours = $isWeekend ? 0 : 8;
+            $hours = 0;
 
             TimesheetDefaultEntry::updateOrCreate(
                 [

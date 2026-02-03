@@ -220,7 +220,7 @@ class UserManageController extends Controller
             }
 
             // Load relationships
-            $user->load(['business', 'roles', 'userDetails']);
+            $user->load(['business', 'roles', 'userDetails.client', 'userDetails.vendor']);
 
             // Self-healing: Ensure userDetails exists
             if (!$user->userDetails) {

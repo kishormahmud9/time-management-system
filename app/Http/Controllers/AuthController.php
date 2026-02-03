@@ -269,17 +269,9 @@ class AuthController extends Controller
             // 🔹 Validate email
             $request->validate([
                 'email' => 'required|email|exists:users,email',
+            ], [
+                'email.exists' => 'Email not found.',
             ]);
-
-            // 🔹 Get user
-            $user = User::where('email', $request->email)->first();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not found.',
-                ], 404);
-            }
 
             // 🔹 Generate OTP (6-digit)
             $otp = rand(100000, 999999);
@@ -293,6 +285,8 @@ class AuthController extends Controller
                     'created_at' => now(),
                 ]
             );
+
+            $user = User::where('email', $request->email)->first();
 
             // 🔹 Send OTP email
             Mail::to($user->email)->send(new OTPEmail($user, $otp));
