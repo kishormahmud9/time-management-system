@@ -4,15 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\BusinessPermission;
-use App\Models\Holiday;
-use App\Models\InternalUser;
-use App\Models\Party;
-use App\Models\Project;
-use App\Models\Timesheet;
-use App\Models\TimesheetDefault;
-use App\Models\TimesheetEntry;
+use App\Models\EmailTemplate;
 use App\Models\User;
-use App\Models\UserDetail;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -25,7 +18,7 @@ class DemoDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Business
+        // Create a Demo Business
         $business = Business::create([
             'name' => 'Demo Tech Solutions',
             'email' => 'info@demotech.com',
@@ -96,7 +89,7 @@ class DemoDataSeeder extends Seeder
             'view_reports',
             'export_reports',
 
-            // User Management
+            // Internal User Management
             'create_internal_user',
             'view_internal_user',
             'update_internal_user',
@@ -104,6 +97,7 @@ class DemoDataSeeder extends Seeder
             'status_update_internal_user',
             'role_update_internal_user',
 
+            // User Details Management
             'create_user_details',
             'view_user_details',
             'update_user_details',
@@ -131,6 +125,7 @@ class DemoDataSeeder extends Seeder
             'view_user',
             'update_user',
             'delete_user',
+            'status_update_user',
             'create_timesheet',
             'view_timesheet',
             'update_timesheet',
@@ -172,6 +167,7 @@ class DemoDataSeeder extends Seeder
             'create_timesheet',
             'view_timesheet',
             'update_timesheet',
+            'approve_timesheet',
             'submit_timesheet',
             'view_party',
             'view_project',
@@ -200,7 +196,11 @@ class DemoDataSeeder extends Seeder
             'view_email_template',
         ]);
 
+        // ================================
         // Create Users
+        // ================================
+
+        // 1. System Admin (no business)
         $systemAdmin = User::create([
             'name' => 'System Administrator',
             'email' => 'admin@system.com',
@@ -209,15 +209,16 @@ class DemoDataSeeder extends Seeder
             'phone' => '+1111111111',
             'gender' => 'male',
             'marital_status' => 'single',
-            'business_id' => null, // System admin has no business
+            'business_id' => null,
             'status' => 'approved',
         ]);
         $systemAdmin->assignRole('System Admin');
 
+        // 2. Business Admin
         $businessAdmin = User::create([
-            'name' => 'John Doe',
-            'email' => 'john@demotech.com',
-            'username' => 'johndoe',
+            'name' => 'Business Admin',
+            'email' => 'admin@business.com',
+            'username' => 'businessadmin',
             'password' => Hash::make('password123'),
             'phone' => '+1222222222',
             'gender' => 'male',
@@ -230,10 +231,11 @@ class DemoDataSeeder extends Seeder
         // Update business owner
         $business->update(['owner_id' => $businessAdmin->id]);
 
+        // 3. Staff / Supervisor
         $staff = User::create([
-            'name' => 'Jane Smith',
-            'email' => 'jane@demotech.com',
-            'username' => 'janesmith',
+            'name' => 'Staff User',
+            'email' => 'staff@business.com',
+            'username' => 'staffuser',
             'password' => Hash::make('password123'),
             'phone' => '+1333333333',
             'gender' => 'female',
@@ -243,251 +245,148 @@ class DemoDataSeeder extends Seeder
         ]);
         $staff->assignRole('Staff');
 
+        // 4. Regular User
         $regularUser = User::create([
-            'name' => 'Bob Johnson',
-            'email' => 'bob@demotech.com',
-            'username' => 'bobjohnson',
+            'name' => 'Regular User',
+            'email' => 'user@business.com',
+            'username' => 'regularuser',
             'password' => Hash::make('password123'),
             'phone' => '+1444444444',
             'gender' => 'male',
-            'marital_status' => 'married',
+            'marital_status' => 'single',
             'business_id' => $business->id,
             'status' => 'approved',
         ]);
         $regularUser->assignRole('User');
 
-        // Create Parties (Clients)
-        $client1 = Party::create([
-            'business_id' => $business->id,
-            'name' => 'ABC Corporation',
-            'phone' => '+1555555555',
-            'zip_code' => '10001',
-            'address' => '456 Business Ave, New York, NY',
-            'party_type' => 'client',
+        // ================================
+        // Create 6 Default Email Templates (business_id = null)
+        // ================================
+
+        // 1. Submit Template
+        $submitTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Timesheet submit, {start_date} To {end_date}, {client_name}',
+            'subject' => 'Timesheet submit, {start_date} To {end_date}, {client_name}',
+            'body' => "Hello,\n\nTimesheet is submit for client : {client_name}\n\nfor time period: {start_date} To {end_date}\n\nThank you.",
+            'template_type' => 'general',
         ]);
 
-        $client2 = Party::create([
-            'business_id' => $business->id,
-            'name' => 'XYZ Industries',
-            'phone' => '+1666666666',
-            'zip_code' => '90001',
-            'address' => '789 Industry Blvd, Los Angeles, CA',
-            'party_type' => 'client',
+        // 2. Resubmit Template
+        $resubmitTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Timesheet resubmit, {start_date} To {end_date}, {client_name}',
+            'subject' => 'Timesheet resubmit, {start_date} To {end_date}, {client_name}',
+            'body' => "Hello,\n\nTimesheet is submit for client : {client_name}\n\nfor time period: {start_date} To {end_date}\n\nThank you.",
+            'template_type' => 'timesheet_submit',
         ]);
 
-        // Create Projects
-        $project1 = Project::create([
-            'business_id' => $business->id,
-            'client_id' => $client1->id,
-            'name' => 'Website Redesign',
-            'code' => 'WEB-001',
+        // 3. Approve Template
+        $approveTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Timesheet approve, {start_date} To {end_date}, {user_name} for client: {client_name}',
+            'subject' => 'Timesheet Approved: {start_date} to {end_date} - {user_name}',
+            'body' => "Hello,\n\n" .
+                     "Your timesheet has been approved.\n\n" .
+                     "Consultant: {user_name}\n" .
+                     "Client: {client_name}\n" .
+                     "Period: {start_date} to {end_date}\n\n" .
+                     "--- TIMESHEET DETAILS ---\n" .
+                     "{timesheet_table}\n\n" .
+                     "--- FINANCIAL SUMMARY ---\n" .
+                     "Total Hours: {total_hours}\n" .
+                     "Total Bill Amount: {total_bill_amount}\n" .
+                     "Total Pay Amount: {total_pay_amount}\n" .
+                     "Gross Margin: {gross_margin}\n" .
+                     "Net Margin: {net_margin}%\n\n" .
+                     "Thank you.",
+            'template_type' => 'timesheet_approve',
         ]);
 
-        $project2 = Project::create([
-            'business_id' => $business->id,
-            'client_id' => $client2->id,
-            'name' => 'Mobile App Development',
-            'code' => 'MOB-001',
+        // 4. Reject Template
+        $rejectTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Timesheet reject, {start_date} To {end_date}, {user_name} for client: {client_name}',
+            'subject' => 'Timesheet reject, {start_date} To {end_date}, {user_name} for client: {client_name}',
+            'body' => "Hello,\n\nTimesheet is reject of {user_name} for client : {client_name}\n\nfor time period: {start_date} To {end_date}\n\nPlease check\n\nThank you.",
+            'template_type' => 'timesheet_reject',
+        ]);
+
+        // 5. Pending Template
+        $pendingTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Timesheet pending, {start_date} To {end_date}, {user_name} for client: {client_name}',
+            'subject' => 'Timesheet pending, {start_date} To {end_date}, {user_name} for client: {client_name}',
+            'body' => "Hello,\n\nYour timesheet is pending for client : {client_name}\n\nfor time period: {start_date} To {end_date}\n\nPlease check\n\nThank you.",
+            'template_type' => 'pending_timesheet_reminder',
+        ]);
+
+        // 6. Request Access Template
+        $requestAccessTemplate = EmailTemplate::create([
+            'business_id' => null,
+            'template_name' => 'Access Request',
+            'subject' => 'Request for access plan',
+            'body' => "please add on following plan,\n\nAlso send us invoice to this add on plan,\n\nThank you",
+            'template_type' => 'general',
         ]);
 
         // ================================
-        // Create Internal Users
+        // Create Template-Role Relationships
         // ================================
-        $accountManager = InternalUser::create([
-            'business_id' => $business->id,
-            'name' => 'Alice Account',
-            'email' => 'am@demotech.com',
-            'phone' => '+1999000001',
-            'role' => 'ac_manager',
-            'rate' => 10, // 10%
-            'commission_on' => 'gross-margin',
-            'rate_type' => 'percentage',
-            'recuesive' => false,
-        ]);
 
-        $bdManager = InternalUser::create([
-            'business_id' => $business->id,
-            'name' => 'Brian BDM',
-            'email' => 'bdm@demotech.com',
-            'phone' => '+1999000002',
-            'role' => 'bd_manager',
-            'rate' => 5, // 5%
-            'commission_on' => 'gross-margin',
-            'rate_type' => 'percentage',
-            'recuesive' => false,
-        ]);
-
-        $recruiter = InternalUser::create([
-            'business_id' => $business->id,
-            'name' => 'Rachel Recruiter',
-            'email' => 'recruiter@demotech.com',
-            'phone' => '+1999000003',
-            'role' => 'recruiter',
-            'rate' => 8, // 8%
-            'commission_on' => 'net-margin',
-            'rate_type' => 'percentage',
-            'recuesive' => false,
-        ]);
-
-        // ================================
-        // Create User Detail for Staff User
-        // ================================
-        $userDetailStaff = UserDetail::create([
-            'business_id' => $business->id,
-            'user_id' => $staff->id,
-
-            'party_id' => $client1->id, // client assignment
-
-            // Rates
-            'client_rate' => 100,        // client pays
-            'consultant_rate' => 60,     // staff gets
-
-            // Account Manager Commission
-            'account_manager_id' => $accountManager->id,
-            'account_manager_commission' => 10,
-            'account_manager_commission_rate_type' => 1,
-            'account_manager_recurssive' => false,
-
-            // Business Development Manager Commission
-            'business_development_manager_id' => $bdManager->id,
-            'business_development_manager_commission' => 5,
-            'business_development_manager_commission_rate_type' => 1,
-            'business_development_manager_recurssive' => false,
-
-            // Recruiter Commission
-            'recruiter_id' => $recruiter->id,
-            'recruiter_commission' => 8,
-            'recruiter_rate_type' => 1,
-            'recruiter_recurssive' => false,
-
-            // Contract
-            'start_date' => now()->subMonth(),
-            'time_sheet_period' => 'weekly',
-            'active' => true,
-        ]);
-
-        // Generate Timesheet Defaults using the service
-        $tsService = new \App\Services\TimesheetDefaultService();
-        $tsService->syncDefaults($userDetailStaff);
-
-        // Create Sample Timesheets
-        $timesheet1 = Timesheet::create([
-            'business_id' => $business->id,
-            'user_id' => $staff->id,
-            'user_detail_id' => $userDetailStaff->id,
-            'client_id' => $client1->id,
-            'start_date' => now()->startOfWeek(),
-            'end_date' => now()->endOfWeek(),
-            'status' => 'submitted',
-            'total_hours' => 40.00,
-            'remarks' => 'Weekly timesheet for Website Redesign project',
-            'submitted_at' => now(),
-        ]);
-
-        // Create entries for timesheet1
-        for ($i = 0; $i < 5; $i++) {
-            TimesheetEntry::create([
-                'business_id' => $business->id,
-                'timesheet_id' => $timesheet1->id,
-                'entry_date' => now()->startOfWeek()->addDays($i),
-                'daily_hours' => 8.00,
-                'extra_hours' => 0.00,
-                'vacation_hours' => 0.00,
-                'note' => 'Worked on frontend development',
-            ]);
-        }
-
-        $timesheet2 = Timesheet::create([
-            'business_id' => $business->id,
-            'user_id' => $regularUser->id,
-            'user_detail_id' => $userDetailStaff->id,
-            'client_id' => $client2->id,
-            'start_date' => now()->subWeek()->startOfWeek(),
-            'end_date' => now()->subWeek()->endOfWeek(),
-            'status' => 'approved',
-            'total_hours' => 42.00,
-            'remarks' => 'Mobile app development - Sprint 1',
-            'submitted_at' => now()->subWeek(),
-            'approved_at' => now()->subWeek()->addDay(),
-            'approved_by' => $businessAdmin->id,
-        ]);
-
-        // Create entries for timesheet2
-        for ($i = 0; $i < 5; $i++) {
-            TimesheetEntry::create([
-                'business_id' => $business->id,
-                'timesheet_id' => $timesheet2->id,
-                'entry_date' => now()->subWeek()->startOfWeek()->addDays($i),
-                'daily_hours' => 8.00,
-                'extra_hours' => $i === 2 ? 2.00 : 0.00, // Overtime on Wednesday
-                'vacation_hours' => 0.00,
-                'note' => $i === 2 ? 'Worked overtime for urgent bug fix' : 'Regular development work',
-            ]);
-        }
-
-        // Create Holidays
-        $holidays = [
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-01-01',
-                'description' => 'New Year\'s Day - New Year celebration',
-                'recurring' => true,
-            ],
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-07-04',
-                'description' => 'Independence Day - Independence Day celebration',
-                'recurring' => true,
-            ],
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-09-01',
-                'description' => 'Labor Day - Labor Day holiday',
-                'recurring' => true,
-            ],
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-11-28',
-                'description' => 'Thanksgiving - Thanksgiving holiday',
-                'recurring' => true,
-            ],
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-12-25',
-                'description' => 'Christmas - Christmas celebration',
-                'recurring' => true,
-            ],
-            [
-                'business_id' => $business->id,
-                'holiday_date' => now()->year . '-03-15',
-                'description' => 'Company Anniversary - Company founding anniversary',
-                'recurring' => true,
-            ],
+        // All roles can use all templates
+        $allTemplates = [
+            $submitTemplate,
+            $resubmitTemplate,
+            $approveTemplate,
+            $rejectTemplate,
+            $pendingTemplate,
+            $requestAccessTemplate,
         ];
 
-        foreach ($holidays as $holiday) {
-            Holiday::create($holiday);
+        $allRoles = [
+            $systemAdminRole,
+            $businessAdminRole,
+            $staffRole,
+            $userRole,
+        ];
+
+        // Create relationships in email_template_used_bies
+        foreach ($allTemplates as $template) {
+            foreach ($allRoles as $role) {
+                \DB::table('email_template_used_bies')->insert([
+                    'mail_template_id' => $template->id,
+                    'role_id' => $role->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
         $this->command->info('Demo data seeded successfully!');
         $this->command->info('');
+        $this->command->info('===========================================');
         $this->command->info('Login Credentials:');
-        $this->command->info('-----------------------------------');
-        $this->command->info('System Admin:');
-        $this->command->info('  Email: admin@system.com');
-        $this->command->info('  Password: password123');
+        $this->command->info('===========================================');
         $this->command->info('');
-        $this->command->info('Business Admin:');
-        $this->command->info('  Email: john@demotech.com');
-        $this->command->info('  Password: password123');
+        $this->command->info('1. System Admin:');
+        $this->command->info('   Email: admin@system.com');
+        $this->command->info('   Password: password123');
         $this->command->info('');
-        $this->command->info('Staff:');
-        $this->command->info('  Email: jane@demotech.com');
-        $this->command->info('  Password: password123');
+        $this->command->info('2. Business Admin:');
+        $this->command->info('   Email: admin@business.com');
+        $this->command->info('   Password: password123');
         $this->command->info('');
-        $this->command->info('User:');
-        $this->command->info('  Email: bob@demotech.com');
-        $this->command->info('  Password: password123');
-        $this->command->info('-----------------------------------');
+        $this->command->info('3. Staff / Supervisor:');
+        $this->command->info('   Email: staff@business.com');
+        $this->command->info('   Password: password123');
+        $this->command->info('');
+        $this->command->info('4. Regular User:');
+        $this->command->info('   Email: user@business.com');
+        $this->command->info('   Password: password123');
+        $this->command->info('');
+        $this->command->info('===========================================');
+        $this->command->info('6 Default Email Templates Created');
+        $this->command->info('===========================================');
     }
 }

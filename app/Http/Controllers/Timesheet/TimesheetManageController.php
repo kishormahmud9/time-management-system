@@ -21,6 +21,7 @@ use App\Notifications\TimesheetStatusUpdated;
 use Illuminate\Support\Facades\Notification;
 use App\Models\EmailTemplate;
 use App\Mail\TimesheetApprovalEmail;
+use App\Mail\TimesheetSubmitEmail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
@@ -80,6 +81,7 @@ class TimesheetManageController extends Controller
                 'remarks' => $request->remarks ?? null,
                 'mail_template_id' => $request->mail_template_id ?? null,
                 'send_to' => $request->send_to ?? null,
+                'cc' => $request->cc ?? null,
                 'submitted_at' => ($request->status ?? 'draft') === 'submitted' ? now() : null,
                 'total_hours' => 0,
             ]);
@@ -128,6 +130,20 @@ class TimesheetManageController extends Controller
             }
 
             $this->logActivity('create_timesheet');
+
+            // Send Submit Email if template is configured
+            if ($timesheet->mail_template_id && $timesheet->send_to) {
+                $template = EmailTemplate::find($timesheet->mail_template_id);
+                if ($template) {
+                    $timesheet->load('attachments', 'entries', 'user', 'client', 'userDetail');
+                    
+                    $mail = Mail::to($timesheet->send_to);
+                    if ($timesheet->cc) {
+                        $mail->cc($timesheet->cc);
+                    }
+                    $mail->send(new TimesheetSubmitEmail($timesheet, $template));
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -292,6 +308,7 @@ class TimesheetManageController extends Controller
                 'remarks' => $request->remarks,
                 'mail_template_id' => $request->mail_template_id ?? null,
                 'send_to' => $request->send_to ?? null,
+                'cc' => $request->cc ?? null,
             ]);
 
             // Update entries if provided
@@ -494,10 +511,24 @@ class TimesheetManageController extends Controller
             }
 
             // Send Approval Email to external address if status is approved
-            if ($request->status === 'approved' && $timesheet->mail_template_id && $timesheet->send_to) {
-                $template = EmailTemplate::find($timesheet->mail_template_id);
+            if ($request->status === 'approved' && $timesheet->send_to) {
+                // Find the approval template (not the submit template!)
+                $template = EmailTemplate::where('template_type', 'timesheet_approve')
+                    ->where(function($query) use ($actor) {
+                        $query->whereNull('business_id')
+                              ->orWhere('business_id', $actor->business_id);
+                    })
+                    ->first();
+                
                 if ($template) {
-                    Mail::to($timesheet->send_to)->send(new TimesheetApprovalEmail($timesheet, $template));
+                    // Ensure attachments are loaded for email
+                    $timesheet->load('attachments');
+                    
+                    $mail = Mail::to($timesheet->send_to);
+                    if ($timesheet->cc) {
+                        $mail->cc($timesheet->cc);
+                    }
+                    $mail->send(new TimesheetApprovalEmail($timesheet, $template));
                 }
             }
 

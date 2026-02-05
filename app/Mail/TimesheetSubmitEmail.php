@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TimesheetApprovalEmail extends Mailable implements ShouldQueue
+class TimesheetSubmitEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -34,51 +34,15 @@ class TimesheetApprovalEmail extends Mailable implements ShouldQueue
     /**
      * Process the template placeholders.
      */
-    protected function processTemplate()
+    private function processTemplate()
     {
-        // Calculate hours breakdown from entries
-        $dailyHours = $this->timesheet->entries->sum('daily_hours');
-        $extraHours = $this->timesheet->entries->sum('extra_hours');
-        $vacationHours = $this->timesheet->entries->sum('vacation_hours');
-        
         // Get user details for commission information
         $userDetail = $this->timesheet->userDetail;
         
-        // Build timesheet table
-        $tableRows = [];
-        $tableRows[] = sprintf(
-            "%-15s | %12s | %12s | %15s | %12s",
-            "Date",
-            "Daily Hours",
-            "Extra Hours",
-            "Vacation Hours",
-            "Total"
-        );
-        $tableRows[] = str_repeat('-', 75);
-        
-        foreach ($this->timesheet->entries as $entry) {
-            $entryTotal = $entry->daily_hours + $entry->extra_hours + $entry->vacation_hours;
-            $tableRows[] = sprintf(
-                "%-15s | %12.2f | %12.2f | %15.2f | %12.2f",
-                $entry->entry_date,
-                $entry->daily_hours,
-                $entry->extra_hours,
-                $entry->vacation_hours,
-                $entryTotal
-            );
-        }
-        
-        $tableRows[] = str_repeat('-', 75);
-        $tableRows[] = sprintf(
-            "%-15s | %12.2f | %12.2f | %15.2f | %12.2f",
-            "TOTALS",
-            $dailyHours,
-            $extraHours,
-            $vacationHours,
-            $this->timesheet->total_hours
-        );
-        
-        $timesheetTable = implode("\n", $tableRows);
+        // Calculate totals from entries
+        $dailyHours = $this->timesheet->entries->sum('daily_hours');
+        $extraHours = $this->timesheet->entries->sum('extra_hours');
+        $vacationHours = $this->timesheet->entries->sum('vacation_hours');
         
         // Calculate financial metrics
         $clientRate = $userDetail ? $userDetail->client_rate : 0;
@@ -88,29 +52,31 @@ class TimesheetApprovalEmail extends Mailable implements ShouldQueue
             // Calculate pay rate based on W2 or C2C
             if ($userDetail->w2 > 0) {
                 $payRate = $userDetail->w2 + ($userDetail->w2 * $userDetail->ptax / 100);
-            } else {
+            } elseif ($userDetail->c2c_or_other > 0) {
                 $payRate = $userDetail->c2c_or_other;
             }
         }
         
-        $totalBillAmount = $this->timesheet->total_hours * $clientRate;
-        $totalPayAmount = $this->timesheet->total_hours * $payRate;
+        $totalBillAmount = ($this->timesheet->total_hours ?? 0) * $clientRate;
+        $totalPayAmount = ($this->timesheet->total_hours ?? 0) * $payRate;
         $netMarginPercentage = $totalBillAmount > 0 
-            ? (($this->timesheet->net_margin / $totalBillAmount) * 100) 
+            ? (($totalBillAmount - $totalPayAmount) / $totalBillAmount) * 100 
             : 0;
-        
+
+        // Prepare data array for placeholder replacement
         $data = [
-            // Basic Info
-            '{user_name}'        => $this->timesheet->user->name ?? 'User',
-            '{timesheet_period}' => ($this->timesheet->start_date ?? '') . ' to ' . ($this->timesheet->end_date ?? ''),
-            '{start_date}'       => $this->timesheet->start_date ?? '',
-            '{end_date}'         => $this->timesheet->end_date ?? '',
-            '{status}'           => ucfirst($this->timesheet->status ?? 'approved'),
-            '{remarks}'          => $this->timesheet->remarks ?? 'N/A',
-            '{client_name}'      => $this->timesheet->client->name ?? 'N/A',
+            // User Information
+            '{user_name}'        => $this->timesheet->user->name ?? 'N/A',
+            '{user_email}'       => $this->timesheet->user->email ?? 'N/A',
             
-            // Timesheet Table
-            '{timesheet_table}'  => $timesheetTable,
+            // Timesheet Information
+            '{start_date}'       => $this->timesheet->start_date ?? 'N/A',
+            '{end_date}'         => $this->timesheet->end_date ?? 'N/A',
+            '{status}'           => ucfirst($this->timesheet->status ?? 'N/A'),
+            '{remarks}'          => $this->timesheet->remarks ?? 'N/A',
+            
+            // Client Information
+            '{client_name}'      => $this->timesheet->client->name ?? 'N/A',
             
             // Hours Breakdown
             '{total_hours}'      => number_format($this->timesheet->total_hours ?? 0, 2),
@@ -138,14 +104,16 @@ class TimesheetApprovalEmail extends Mailable implements ShouldQueue
             '{bdm_commission}'   => $userDetail ? number_format($userDetail->business_development_manager_commission ?? 0, 2) : '0.00',
             '{recruiter_commission}' => $userDetail ? number_format($userDetail->recruiter_commission ?? 0, 2) : '0.00',
             
-            // Commission Person Names
-            '{account_manager}'  => $userDetail && $userDetail->accountManager ? $userDetail->accountManager->name : 'N/A',
-            '{bdm}'              => $userDetail && $userDetail->businessDevelopmentManager ? $userDetail->businessDevelopmentManager->name : 'N/A',
-            '{recruiter}'        => $userDetail && $userDetail->recruiter ? $userDetail->recruiter->name : 'N/A',
+            // Additional Information
+            '{approver_name}'    => $this->timesheet->approver->name ?? 'N/A',
+            '{approved_by}'      => $this->timesheet->approved_by ?? 'N/A',
+            '{created_at}'       => $this->timesheet->created_at ? $this->timesheet->created_at->format('Y-m-d') : 'N/A',
+            '{updated_at}'       => $this->timesheet->updated_at ? $this->timesheet->updated_at->format('Y-m-d') : 'N/A',
         ];
 
-        $this->processedBody = str_replace(array_keys($data), array_values($data), $this->template->body);
+        // Replace placeholders in subject and body
         $this->processedSubject = str_replace(array_keys($data), array_values($data), $this->template->subject);
+        $this->processedBody = str_replace(array_keys($data), array_values($data), $this->template->body);
     }
 
     /**
@@ -164,7 +132,10 @@ class TimesheetApprovalEmail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.dynamic_template',
+            view: 'emails.timesheet',
+            with: [
+                'body' => nl2br(e($this->processedBody)),
+            ],
         );
     }
 
@@ -176,17 +147,15 @@ class TimesheetApprovalEmail extends Mailable implements ShouldQueue
     public function attachments(): array
     {
         $attachments = [];
-        
-        // Get all attachments for this timesheet
-        foreach ($this->timesheet->attachments as $attachment) {
-            // Check if file exists in storage
-            if (\Storage::disk('public')->exists($attachment->file_path)) {
-                $attachments[] = Attachment::fromStorageDisk('public', $attachment->file_path)
+
+        if ($this->timesheet->attachments) {
+            foreach ($this->timesheet->attachments as $attachment) {
+                $attachments[] = Attachment::fromStorage('public/' . $attachment->file_path)
                     ->as($attachment->original_filename)
                     ->withMime($attachment->file_type);
             }
         }
-        
+
         return $attachments;
     }
 }

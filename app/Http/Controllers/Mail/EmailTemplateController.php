@@ -92,10 +92,22 @@ class EmailTemplateController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
-            // ✅ Filter by business
-            $templates = $this->access->filterByBusiness($actor, EmailTemplate::class)
-                ->with('usedBy')
+            // Get user's role IDs
+            $userRoleIds = $actor->roles->pluck('id')->toArray();
+
+            // Get templates that are either:
+            // 1. Default templates (business_id = null)
+            // 2. User's own business templates
+            // AND assigned to user's role
+            $templates = EmailTemplate::with('usedBy')
                 ->where('status', 'active')
+                ->where(function ($query) use ($actor) {
+                    $query->whereNull('business_id') // Default templates
+                          ->orWhere('business_id', $actor->business_id); // User's business templates
+                })
+                ->whereHas('usedBy', function ($query) use ($userRoleIds) {
+                    $query->whereIn('role_id', $userRoleIds);
+                })
                 ->get();
 
             return response()->json([
@@ -123,7 +135,8 @@ class EmailTemplateController extends Controller
             $template = EmailTemplate::with(['usedBy'])->findOrFail($id);
 
             // ✅ Check access permission
-            if (!$this->access->canViewResource($actor, $template)) {
+            // Allow access if template is default (business_id = null) OR belongs to user's business
+            if ($template->business_id !== null && !$this->access->canViewResource($actor, $template)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not allowed to view this template.'
@@ -141,6 +154,7 @@ class EmailTemplateController extends Controller
                 'error' => $e->getMessage()
             ], 404);
         }
+        
     }
 
 
@@ -154,6 +168,14 @@ class EmailTemplateController extends Controller
             }
 
             $template = EmailTemplate::findOrFail($id);
+
+            // ✅ Prevent modifying default templates
+            if ($template->business_id === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot modify default system templates.'
+                ], 403);
+            }
 
             // ✅ Check modify permission
             if (!$this->access->canModifyResource($actor, $template)) {
@@ -221,6 +243,14 @@ class EmailTemplateController extends Controller
                     'success' => false,
                     'message' => 'Template not found'
                 ], 404);
+            }
+
+            // ✅ Prevent deleting default templates
+            if ($template->business_id === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete default system templates.'
+                ], 403);
             }
 
             // ✅ Check modify permission
