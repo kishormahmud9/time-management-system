@@ -17,10 +17,12 @@ class EmailTemplateController extends Controller
     use UserActivityTrait;
     
     protected UserAccessService $access;
+    protected \App\Services\BusinessPermissionService $permissionService;
 
-    public function __construct(UserAccessService $access)
+    public function __construct(UserAccessService $access, \App\Services\BusinessPermissionService $permissionService)
     {
         $this->access = $access;
+        $this->permissionService = $permissionService;
     }
 
     /**
@@ -48,6 +50,13 @@ class EmailTemplateController extends Controller
             $actor = Auth::user();
             if (! $actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (!$this->permissionService->canUseTemplates($actor->business_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email templates are disabled for your organization.'
+                ], 403);
             }
 
             $template = EmailTemplate::create([
@@ -90,6 +99,13 @@ class EmailTemplateController extends Controller
             $actor = Auth::user();
             if (!$actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (!$this->permissionService->canUseTemplates($actor->business_id)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [] // Return empty list if disabled
+                ]);
             }
 
             // Get user's role IDs
@@ -167,6 +183,13 @@ class EmailTemplateController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
             }
 
+            if (!$this->permissionService->canUseTemplates($actor->business_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email templates are disabled for your organization.'
+                ], 403);
+            }
+
             $template = EmailTemplate::findOrFail($id);
 
             // ✅ Prevent modifying default templates
@@ -234,6 +257,13 @@ class EmailTemplateController extends Controller
             $actor = Auth::user();
             if (!$actor) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            if (!$this->permissionService->canUseTemplates($actor->business_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email templates are disabled for your organization.'
+                ], 403);
             }
 
             $template = EmailTemplate::find($id);

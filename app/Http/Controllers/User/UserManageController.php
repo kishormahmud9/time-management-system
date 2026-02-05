@@ -20,12 +20,14 @@ class UserManageController extends Controller
     use UserActivityTrait;
     protected RoleService $roleService;
     protected UserAccessService $access;
+    protected \App\Services\BusinessPermissionService $permissionService;
 
 
-    public function __construct(RoleService $roleService, UserAccessService $access)
+    public function __construct(RoleService $roleService, UserAccessService $access, \App\Services\BusinessPermissionService $permissionService)
     {
         $this->roleService = $roleService;
         $this->access = $access;
+        $this->permissionService = $permissionService;
     }
 
     // Create new User
@@ -67,6 +69,16 @@ class UserManageController extends Controller
                  'success' => false,
                  'message' => 'You do not have permission to create users.'
              ], 403);
+        }
+
+        // Check User Limit
+        if (!$this->permissionService->canCreateUser($actor->business_id)) {
+            $limit = $this->permissionService->getUserLimit($actor->business_id);
+            return response()->json([
+                'success' => false,
+                'message' => "User limit reached. Your plan allows max {$limit} users.",
+                'error_code' => 'USER_LIMIT_REACHED'
+            ], 403);
         }
 
         DB::beginTransaction();

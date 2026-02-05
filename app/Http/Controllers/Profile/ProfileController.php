@@ -29,7 +29,7 @@ class ProfileController extends Controller
             }
 
             // Load relationships
-            $user->load(['business', 'roles', 'userDetails']);
+            $user->load(['business.permission', 'roles', 'userDetails']);
 
             // Return user profile
             return response()->json([

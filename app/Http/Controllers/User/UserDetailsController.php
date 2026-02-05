@@ -21,16 +21,19 @@ class UserDetailsController extends Controller
     protected RoleService $roleService;
     protected UserAccessService $access;
     protected TimesheetDefaultService $tsDefaultService;
+    protected \App\Services\BusinessPermissionService $permissionService;
 
 
     public function __construct(
         RoleService $roleService,
         UserAccessService $access,
-        TimesheetDefaultService $tsDefaultService
+        TimesheetDefaultService $tsDefaultService,
+        \App\Services\BusinessPermissionService $permissionService
     ) {
         $this->roleService = $roleService;
         $this->access = $access;
         $this->tsDefaultService = $tsDefaultService;
+        $this->permissionService = $permissionService;
     }
 
     // Create new Internal User
@@ -131,27 +134,27 @@ class UserDetailsController extends Controller
                     'consultant_rate' => $request->consultant_rate,
 
                     // Account Manager
-                    'account_manager_commission' => $request->account_manager_commission ?? 0,
-                    'account_manager_commission_rate_count_on' => $request->account_manager_commission_rate_count_on,
-                    'account_manager_commission_rate_type' => $request->account_manager_commission_rate_type ?? 1,
-                    'account_manager_recurssive' => $request->account_manager_recurssive ?? false,
-                    'account_manager_recurssive_month' => $request->account_manager_recurssive_month,
+                    'account_manager_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_commission ?? 0) : 0,
+                    'account_manager_commission_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->account_manager_commission_rate_count_on : null,
+                    'account_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_commission_rate_type ?? 1) : 1,
+                    'account_manager_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_recurssive ?? false) : false,
+                    'account_manager_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->account_manager_recurssive_month : null,
                     'account_manager_id' => $request->account_manager_id,
 
                     // Business Development Manager
-                    'business_development_manager_commission' => $request->business_development_manager_commission ?? 0,
-                    'business_development_manager_commission_rate_count_on' => $request->business_development_manager_commission_rate_count_on,
-                    'business_development_manager_commission_rate_type' => $request->business_development_manager_commission_rate_type ?? 1,
-                    'business_development_manager_recurssive' => $request->business_development_manager_recurssive ?? false,
-                    'business_development_manager_recurssive_month' => $request->business_development_manager_recurssive_month,
+                    'business_development_manager_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_commission ?? 0) : 0,
+                    'business_development_manager_commission_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->business_development_manager_commission_rate_count_on : null,
+                    'business_development_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_commission_rate_type ?? 1) : 1,
+                    'business_development_manager_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_recurssive ?? false) : false,
+                    'business_development_manager_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->business_development_manager_recurssive_month : null,
                     'business_development_manager_id' => $request->business_development_manager_id,
 
                     // Recruiter
-                    'recruiter_commission' => $request->recruiter_commission ?? 0,
-                    'recruiter_rate_count_on' => $request->recruiter_rate_count_on,
-                    'recruiter_rate_type' => $request->recruiter_rate_type ?? 1,
-                    'recruiter_recurssive' => $request->recruiter_recurssive ?? false,
-                    'recruiter_recurssive_month' => $request->recruiter_recurssive_month,
+                    'recruiter_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_commission ?? 0) : 0,
+                    'recruiter_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->recruiter_rate_count_on : null,
+                    'recruiter_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_rate_type ?? 1) : 1,
+                    'recruiter_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_recurssive ?? false) : false,
+                    'recruiter_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->recruiter_recurssive_month : null,
                     'recruiter_id' => $request->recruiter_id,
 
                     // Contract
@@ -204,6 +207,15 @@ class UserDetailsController extends Controller
                 ->with(['user', 'party', 'accountManager', 'businessDevelopmentManager', 'recruiter'])
                 ->get();
 
+            // Hide commissions if disabled
+            if (!$this->permissionService->canUseCommissions($actor->business_id)) {
+                $userDetail->makeHidden([
+                    'account_manager_commission', 'account_manager_commission_rate_type', 'account_manager_commission_rate_count_on', 'account_manager_recurssive', 'account_manager_recurssive_month',
+                    'business_development_manager_commission', 'business_development_manager_commission_rate_type', 'business_development_manager_commission_rate_count_on', 'business_development_manager_recurssive', 'business_development_manager_recurssive_month',
+                    'recruiter_commission', 'recruiter_rate_type', 'recruiter_rate_count_on', 'recruiter_recurssive', 'recruiter_recurssive_month'
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $userDetail
@@ -234,6 +246,15 @@ class UserDetailsController extends Controller
                     'success' => false,
                     'message' => 'You are not allowed to view this user.'
                 ], 403);
+            }
+
+            // Hide commissions if disabled
+            if (!$this->permissionService->canUseCommissions($actor->business_id)) {
+                $userDetail->makeHidden([
+                    'account_manager_commission', 'account_manager_commission_rate_type', 'account_manager_commission_rate_count_on', 'account_manager_recurssive', 'account_manager_recurssive_month',
+                    'business_development_manager_commission', 'business_development_manager_commission_rate_type', 'business_development_manager_commission_rate_count_on', 'business_development_manager_recurssive', 'business_development_manager_recurssive_month',
+                    'recruiter_commission', 'recruiter_rate_type', 'recruiter_rate_count_on', 'recruiter_recurssive', 'recruiter_recurssive_month'
+                ]);
             }
 
             return response()->json([
@@ -329,7 +350,7 @@ class UserDetailsController extends Controller
         DB::beginTransaction();
 
         try {
-            $userDetail->update($request->only([
+            $updateData = $request->only([
                 'party_id',
                 'client_id',
                 'vendor_id',
@@ -341,25 +362,8 @@ class UserDetailsController extends Controller
                 'w2_or_c2c_type',
 
                 'account_manager_id',
-                'account_manager_commission',
-                'account_manager_commission_rate_type',
-                'account_manager_commission_rate_count_on',
-                'account_manager_recurssive',
-                'account_manager_recurssive_month',
-
                 'business_development_manager_id',
-                'business_development_manager_commission',
-                'business_development_manager_commission_rate_type',
-                'business_development_manager_commission_rate_count_on',
-                'business_development_manager_recurssive',
-                'business_development_manager_recurssive_month',
-
                 'recruiter_id',
-                'recruiter_commission',
-                'recruiter_rate_type',
-                'recruiter_rate_count_on',
-                'recruiter_recurssive',
-                'recruiter_recurssive_month',
 
                 'start_date',
                 'end_date',
@@ -369,7 +373,40 @@ class UserDetailsController extends Controller
                 'address',
                 'invoice_to',
                 'file_folder',
-            ]));
+            ]);
+
+            // Add commissions only if permitted
+            if ($this->permissionService->canUseCommissions($actor->business_id)) {
+                $commissionData = $request->only([
+                    'account_manager_commission',
+                    'account_manager_commission_rate_type',
+                    'account_manager_commission_rate_count_on',
+                    'account_manager_recurssive',
+                    'account_manager_recurssive_month',
+
+                    'business_development_manager_commission',
+                    'business_development_manager_commission_rate_type',
+                    'business_development_manager_commission_rate_count_on',
+                    'business_development_manager_recurssive',
+                    'business_development_manager_recurssive_month',
+
+                    'recruiter_commission',
+                    'recruiter_rate_type',
+                    'recruiter_rate_count_on',
+                    'recruiter_recurssive',
+                    'recruiter_recurssive_month',
+                ]);
+                $updateData = array_merge($updateData, $commissionData);
+            } else {
+                // If disabled, explicitly set commissions to 0 or null if they were provided in request
+                $updateData = array_merge($updateData, [
+                    'account_manager_commission' => 0,
+                    'business_development_manager_commission' => 0,
+                    'recruiter_commission' => 0
+                ]);
+            }
+
+            $userDetail->update($updateData);
 
             // Sync Timesheet Defaults
             $this->tsDefaultService->syncDefaults($userDetail);

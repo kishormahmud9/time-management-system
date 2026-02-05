@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->appendToGroup('api', [
             HandleCors::class,
+            \App\Http\Middleware\CheckBusinessLogin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
