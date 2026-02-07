@@ -36,7 +36,7 @@ class RevenueReportController extends Controller
 
             // 1. Build Base Query for Timesheets
             $query = $this->access->filterByBusiness($actor, Timesheet::class)
-                ->with(['user', 'client', 'userDetail']);
+                ->with(['user', 'client', 'userDetail', 'attachments']);
 
             // 2. Apply Header Filters
             $query = $this->applyDashboardFilters($query, $request);
@@ -74,6 +74,9 @@ class RevenueReportController extends Controller
      */
     private function applyDashboardFilters($query, Request $request)
     {
+        // STRICT: Only Approved timesheets
+        $query->where('status', 'approved');
+
         // Year filter
         if ($request->has('year')) {
             $query->whereYear('start_date', $request->year);
@@ -192,31 +195,36 @@ class RevenueReportController extends Controller
      */
     private function calculateTableData($timesheets)
     {
-        // Group by user and client to get granular report
-        $grouped = $timesheets->groupBy(function($ts) {
-            return $ts->user_id . '_' . $ts->client_id;
-        });
+        // Group by user to satisfy "User-wise" ledger requirement
+        $grouped = $timesheets->groupBy('user_id');
 
-        return $grouped->map(function ($items) {
-            $first = $items->first();
-            $metrics = $this->calculateSummary($items);
+        return $grouped->map(function ($userTimesheets) {
+            $first = $userTimesheets->first();
+            $userSummary = $this->calculateSummary($userTimesheets);
             
-            // Per item commissions for the table columns
-            $ud = $first->userDetail;
-            $hours = $metrics['total_hours'];
-            
+            // Step 2 & 3: Individual timesheet rows with detailed breakdown
+            $timesheetRows = $userTimesheets->map(function($ts) {
+                $tsSummary = $this->calculateSummary(collect([$ts]));
+                
+                return [
+                    'id' => $ts->id,
+                    'period' => Carbon::parse($ts->start_date)->format('d M Y') . ' to ' . Carbon::parse($ts->end_date)->format('d M Y'),
+                    'total_hours' => $tsSummary['total_hours'],
+                    'revenue' => $tsSummary['total_gross_revenue'], // Bill Amount
+                    'expense' => $tsSummary['total_expense'],       // Cost Amount
+                    'gross_margin' => $tsSummary['total_gross_margin'],
+                    'net_margin' => $tsSummary['total_net_margin'],
+                    'commission' => $tsSummary['total_commission'],
+                    'subject' => $ts->subject,
+                    'status' => $ts->status,
+                ];
+            });
+
             return [
-                'consultant_name' => $first->user ? $first->user->name : 'N/A',
-                'client_name' => $first->client ? $first->client->name : 'N/A',
-                'total_hours' => $metrics['total_hours'],
-                'revenue' => $metrics['total_gross_revenue'],
-                'total_expense' => $metrics['total_expense'],
-                'gross_margin' => $metrics['total_gross_margin'],
-                'total_commission' => $metrics['total_commission'],
-                'net_margin' => $metrics['total_net_margin'],
-                'am_commission' => $ud ? round($hours * $ud->account_manager_commission, 2) : 0,
-                'bdm_commission' => $ud ? round($hours * $ud->business_development_manager_commission, 2) : 0,
-                'rec_commission' => $ud ? round($hours * $ud->recruiter_commission, 2) : 0,
+                'user_info' => $first->user,
+                'user_detail' => $first->userDetail,
+                'summary' => $userSummary,
+                'timesheets' => $timesheetRows
             ];
         })->values();
     }

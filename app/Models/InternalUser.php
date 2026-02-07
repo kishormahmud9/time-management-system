@@ -27,4 +27,9 @@ class InternalUser extends Model
     {
         return $this->hasMany(UserDetail::class, 'recruiter_id');
     }
+
+    public function timesheets()
+    {
+        return $this->hasMany(Timesheet::class, 'user_id'); // Assuming user_id in timesheets can refer to InternalUser id if they share the same space or if it's relevant
+    }
 }

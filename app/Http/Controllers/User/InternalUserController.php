@@ -130,7 +130,9 @@ class InternalUserController extends Controller
                 return response()->json(['success' => false, 'message' => 'You do not have permission to view internal users.'], 403);
             }
 
-            $internalUsers = InternalUser::where('business_id', $actor->business_id)->get();
+            $internalUsers = InternalUser::where('business_id', $actor->business_id)
+                ->withCount('timesheets')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -159,6 +161,7 @@ class InternalUserController extends Controller
 
             $internalUser = InternalUser::with(['accountManagerDetails', 'bdManagerDetails', 'recruiterDetails'])
                 ->findOrFail($id);
+            $internalUser->loadCount('timesheets');
 
             // Authorization check using service
             if (! $this->access->canViewResource($actor, $internalUser)) {

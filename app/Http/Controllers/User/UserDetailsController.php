@@ -53,6 +53,7 @@ class UserDetailsController extends Controller
             'party_id'    => 'nullable|exists:parties,id',
             'client_id'   => 'nullable|exists:parties,id',
             'vendor_id'   => 'nullable|exists:parties,id',
+            'employee_id' => 'nullable|exists:parties,id',
 
             // ========================
             // Rates (Business Critical)
@@ -128,6 +129,15 @@ class UserDetailsController extends Controller
                     'party_id' => $request->party_id,
                     'client_id' => $request->client_id,
                     'vendor_id' => $request->vendor_id,
+                    'employee_id' => $request->employee_id,
+                    'w2' => $request->w2 ?? 0,
+                    'ptax' => $request->ptax ?? 0,
+                    'c2c_or_other' => $request->c2c_or_other ?? 0,
+                    'w2_or_c2c_type' => $request->w2_or_c2c_type,
+                    'other_rate' => $request->other_rate ?? 0,
+                    'other_rate_type' => $request->other_rate_type ?? 'percentage',
+                    'recurssive' => $request->recurssive ?? false,
+                    'recurssive_month' => $request->recurssive_month,
 
                     // Rates
                     'client_rate' => $request->client_rate,
@@ -136,7 +146,7 @@ class UserDetailsController extends Controller
                     // Account Manager
                     'account_manager_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_commission ?? 0) : 0,
                     'account_manager_commission_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->account_manager_commission_rate_count_on : null,
-                    'account_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_commission_rate_type ?? 1) : 1,
+                    'account_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_commission_rate_type ?? 'percentage') : 'percentage',
                     'account_manager_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->account_manager_recurssive ?? false) : false,
                     'account_manager_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->account_manager_recurssive_month : null,
                     'account_manager_id' => $request->account_manager_id,
@@ -144,7 +154,7 @@ class UserDetailsController extends Controller
                     // Business Development Manager
                     'business_development_manager_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_commission ?? 0) : 0,
                     'business_development_manager_commission_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->business_development_manager_commission_rate_count_on : null,
-                    'business_development_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_commission_rate_type ?? 1) : 1,
+                    'business_development_manager_commission_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_commission_rate_type ?? 'fixed') : 'fixed',
                     'business_development_manager_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->business_development_manager_recurssive ?? false) : false,
                     'business_development_manager_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->business_development_manager_recurssive_month : null,
                     'business_development_manager_id' => $request->business_development_manager_id,
@@ -152,7 +162,7 @@ class UserDetailsController extends Controller
                     // Recruiter
                     'recruiter_commission' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_commission ?? 0) : 0,
                     'recruiter_rate_count_on' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->recruiter_rate_count_on : null,
-                    'recruiter_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_rate_type ?? 1) : 1,
+                    'recruiter_rate_type' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_rate_type ?? 'percentage') : 'percentage',
                     'recruiter_recurssive' => $this->permissionService->canUseCommissions($actor->business_id) ? ($request->recruiter_recurssive ?? false) : false,
                     'recruiter_recurssive_month' => $this->permissionService->canUseCommissions($actor->business_id) ? $request->recruiter_recurssive_month : null,
                     'recruiter_id' => $request->recruiter_id,
@@ -296,6 +306,7 @@ class UserDetailsController extends Controller
             'party_id' => 'nullable|exists:parties,id',
             'client_id' => 'nullable|exists:parties,id',
             'vendor_id' => 'nullable|exists:parties,id',
+            'employee_id' => 'nullable|exists:parties,id',
 
             // Rates
             'client_rate' => 'required|numeric|min:0',
@@ -303,11 +314,13 @@ class UserDetailsController extends Controller
             'w2' => 'nullable|numeric|min:0',
             'c2c_or_other' => 'nullable|numeric|min:0',
             'w2_or_c2c_type' => 'nullable|integer',
+            'other_rate' => 'nullable|numeric|min:0',
+            'other_rate_type' => 'nullable|string|max:255',
 
             // Account Manager
             'account_manager_id' => 'nullable|exists:internal_users,id',
             'account_manager_commission' => 'nullable|numeric|min:0',
-            'account_manager_commission_rate_type' => 'nullable|integer',
+            'account_manager_commission_rate_type' => 'nullable|string|in:fixed,percentage',
             'account_manager_commission_rate_count_on' => 'nullable|string',
             'account_manager_recurssive' => 'nullable|boolean',
             'account_manager_recurssive_month' => 'nullable|integer',
@@ -315,7 +328,7 @@ class UserDetailsController extends Controller
             // Business Development Manager
             'business_development_manager_id' => 'nullable|exists:internal_users,id',
             'business_development_manager_commission' => 'nullable|numeric|min:0',
-            'business_development_manager_commission_rate_type' => 'nullable|integer',
+            'business_development_manager_commission_rate_type' => 'nullable|string|in:fixed,percentage',
             'business_development_manager_commission_rate_count_on' => 'nullable|string',
             'business_development_manager_recurssive' => 'nullable|boolean',
             'business_development_manager_recurssive_month' => 'nullable|integer',
@@ -323,7 +336,7 @@ class UserDetailsController extends Controller
             // Recruiter
             'recruiter_id' => 'nullable|exists:internal_users,id',
             'recruiter_commission' => 'nullable|numeric|min:0',
-            'recruiter_rate_type' => 'nullable|integer',
+            'recruiter_rate_type' => 'nullable|string|in:fixed,percentage',
             'recruiter_rate_count_on' => 'nullable|string',
             'recruiter_recurssive' => 'nullable|boolean',
             'recruiter_recurssive_month' => 'nullable|integer',
@@ -354,12 +367,15 @@ class UserDetailsController extends Controller
                 'party_id',
                 'client_id',
                 'vendor_id',
+                'employee_id',
 
                 'client_rate',
                 'consultant_rate',
                 'w2',
                 'c2c_or_other',
                 'w2_or_c2c_type',
+                'other_rate',
+                'other_rate_type',
 
                 'account_manager_id',
                 'business_development_manager_id',
@@ -373,6 +389,8 @@ class UserDetailsController extends Controller
                 'address',
                 'invoice_to',
                 'file_folder',
+                'recurssive',
+                'recurssive_month',
             ]);
 
             // Add commissions only if permitted

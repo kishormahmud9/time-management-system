@@ -194,7 +194,10 @@ class UserManageController extends Controller
                 return response()->json(['success' => false, 'message' => 'You do not have permission to view users.'], 403);
             }
 
-            $users = $this->access->filterByBusiness($actor, \App\Models\User::class)->with('roles')->get();
+            $users = $this->access->filterByBusiness($actor, \App\Models\User::class)
+                ->with(['roles', 'userDetails.client', 'userDetails.vendor'])
+                ->withCount('timesheets')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -233,6 +236,7 @@ class UserManageController extends Controller
 
             // Load relationships
             $user->load(['business', 'roles', 'userDetails.client', 'userDetails.vendor']);
+            $user->loadCount('timesheets');
 
             // Self-healing: Ensure userDetails exists
             if (!$user->userDetails) {
